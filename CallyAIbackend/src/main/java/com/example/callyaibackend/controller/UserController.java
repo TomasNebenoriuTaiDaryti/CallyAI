@@ -1,10 +1,8 @@
 package com.example.callyaibackend.controller;
 
-
 import com.example.callyaibackend.model.User;
 import org.springframework.web.bind.annotation.*;
 import com.example.callyaibackend.repo.UserRepo;
-
 import java.util.List;
 
 @RestController

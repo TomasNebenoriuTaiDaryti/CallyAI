@@ -2,10 +2,16 @@ package com.example.callyaiandroid.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Light theme colors
+val BlackPrimary = Color(0xFF000000)
+val GreyOnPrimary = Color(0xFFFFFFFF)
+val LightSurface = Color(0xFFF7F7F7)
+val LightOnSurface = Color(0xFF1A1A1A)
+val LightOutline = Color(0xFFE6E6E6)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Dark theme colors
+val DarkSurface = Color(0xFF121212)
+val DarkOnSurface = Color(0xFFEDEDED)
+val DarkOutline = Color(0xFF2A2A2A)
+val WhitePrimary = Color(0xFFFFFFFF)
+val BlackOnPrimary = Color(0xFF000000)
