@@ -101,7 +101,20 @@ class MainActivity : ComponentActivity() {
                                         Text("Suvestinė – čia rodysime dienos kalorijų tikslą")
                                     }
                                     composable(Dest.Prideti.route) {
-                                        Text("Pridėti – čia bus AI atpažinimas ir kamera 📷")
+                                        val vmAdd = remember { com.example.callyaiandroid.ui.add.AddFoodViewModel() }
+                                        val currentToken = token
+
+                                        if (currentToken.isNullOrBlank()) {
+                                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                                Text("Atsijungta...")
+                                            }
+                                        } else {
+                                            com.example.callyaiandroid.ui.add.AddFoodScreen(
+                                                vm = vmAdd,
+                                                token = currentToken,
+                                                showSnack = showSnack
+                                            )
+                                        }
                                     }
                                     composable(Dest.Profilis.route) {
                                         val vmProf = remember { ProfileViewModel(prefs) }

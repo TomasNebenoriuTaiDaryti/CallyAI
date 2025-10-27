@@ -1,75 +1,97 @@
 package com.example.callyaibackend.service;
 
-import com.example.callyaibackend.model.FoodItem;
-import com.example.callyaibackend.util.HttpClient;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.example.callyaibackend.model.FoodResponse;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
+@Service
 public class FoodApiService {
 
-    private static final String API_URL = "https://api.deepseek.com/v1/chat/completions";
-    private static final String API_KEY = "sk-6273a3cf307f47d9ad2b6729517f5501"; // <-- PUT YOUR KEY
+    @Value("${deepseek.api.url:https://api.deepseek.com/chat/completions}")
+    private String deepseekUrl;
 
-    public FoodItem getCaloriesForFood(String foodName) throws Exception {
+    @Value("${deepseek.api.key:sk-6273a3cf307f47d9ad2b6729517f5501}")
+    private String deepseekKey;
 
-        if (foodName == null || foodName.isBlank()) {
-            return new FoodItem("INVALID_INPUT", 0);
+    @Value("${deepseek.model:deepseek-chat}")
+    private String model;
+
+    private static final ObjectMapper M = new ObjectMapper();
+
+    public FoodResponse search(String query) {
+        // Jeigu raktas nesukonfigūruotas – turim saugų fallback'ą, kad UI veiktų
+        if (deepseekKey == null || deepseekKey.isBlank()) {
+            int cal = switch (query.trim().toLowerCase()) {
+                case "apple" -> 52;
+                case "banana" -> 89;
+                case "chicken breast" -> 165;
+                default -> 100;
+            };
+            return new FoodResponse(cap(query), cal, "per 100 g", "fallback");
         }
 
-        String userPrompt =
-                "You are a strict calorie calculator.\n" +
-                        "User gives a food name (like 'banana', 'pizza 200g').\n" +
-                        "If it's valid food, respond ONLY with calories as a number (no units, no words).\n" +
-                        "If it's not food, respond EXACTLY: INVALID_INPUT.\n\n" +
-                        "Food: " + foodName;
-
-        JsonObject requestJson = new JsonObject();
-        requestJson.addProperty("model", "deepseek-chat");
-        requestJson.addProperty("stream", false);
-
-        JsonArray messages = new JsonArray();
-
-        JsonObject systemMsg = new JsonObject();
-        systemMsg.addProperty("role", "system");
-        systemMsg.addProperty("content", "You are a nutrition and calorie calculation assistant.");
-        messages.add(systemMsg);
-
-        JsonObject userMsg = new JsonObject();
-        userMsg.addProperty("role", "user");
-        userMsg.addProperty("content", userPrompt);
-        messages.add(userMsg);
-
-        requestJson.add("messages", messages);
-
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Authorization", "Bearer " + API_KEY);
-        headers.put("Content-Type", "application/json");
-
-        String response = HttpClient.post(API_URL, headers, requestJson.toString());
-
-        JsonObject root = JsonParser.parseString(response).getAsJsonObject();
-        String reply = root
-                .getAsJsonArray("choices")
-                .get(0).getAsJsonObject()
-                .getAsJsonObject("message")
-                .get("content").getAsString()
-                .trim();
-
-        if (reply.equalsIgnoreCase("INVALID_INPUT")) {
-            return new FoodItem("INVALID_INPUT", 0);
-        }
-
-        double calories;
         try {
-            calories = Double.parseDouble(reply.replaceAll("[^0-9.]", ""));
-        } catch (Exception e) {
-            throw new Exception("AI returned non-numeric response: " + reply);
-        }
+            // 1) DeepSeek – OpenAI compatible chat completions
+            ObjectNode root = M.createObjectNode();
+            root.put("model", model);
 
-        return new FoodItem(foodName, calories);
+            ArrayNode msgs = root.putArray("messages");
+            ObjectNode sys = M.createObjectNode();
+            sys.put("role", "system");
+            sys.put("content",
+                    "You are a nutrition assistant. Reply ONLY with a compact JSON object: " +
+                            "{\"name\":\"<food>\",\"calories\":<integer>,\"unit\":\"per 100 g\"} . " +
+                            "Do not include any extra text.");
+            msgs.add(sys);
+
+            ObjectNode user = M.createObjectNode();
+            user.put("role", "user");
+            user.put("content", "Food: \"" + query + "\"");
+            msgs.add(user);
+
+            String body = M.writeValueAsString(root);
+
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(deepseekUrl))
+                    .header("Authorization", "Bearer " + deepseekKey)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+            HttpClient http = HttpClient.newHttpClient();
+            HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+
+            if (resp.statusCode() >= 300) {
+                throw new RuntimeException("DeepSeek error: " + resp.statusCode() + " -> " + resp.body());
+            }
+
+            // 2) Paimam modelio atsakymo tekstą ir išparsai­nom JSON
+            JsonNode json = M.readTree(resp.body());
+            String content = json.path("choices").get(0).path("message").path("content").asText("{}");
+
+            JsonNode j = M.readTree(content);
+            String name = j.path("name").asText(query);
+            int calories = j.path("calories").asInt(0);
+            String unit = j.path("unit").asText("per 100 g");
+
+            return new FoodResponse(cap(name), calories, unit, "deepseek");
+        } catch (Exception e) {
+            // jei kas nors ne taip – grąžinam aiškią klaidą UI
+            throw new RuntimeException("Nepavyko gauti kalorijų iš DeepSeek", e);
+        }
+    }
+
+    private static String cap(String s) {
+        if (s == null || s.isBlank()) return s;
+        return s.substring(0,1).toUpperCase() + s.substring(1);
     }
 }

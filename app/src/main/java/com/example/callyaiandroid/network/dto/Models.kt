@@ -28,3 +28,10 @@ data class AuthResp(
     val userId: Long,
     val name: String
 )
+
+data class FoodSearchRes(
+    val calories: Int,
+    val name: String? = null,
+    val unit: String? = null,
+    val source: String? = null
+)
