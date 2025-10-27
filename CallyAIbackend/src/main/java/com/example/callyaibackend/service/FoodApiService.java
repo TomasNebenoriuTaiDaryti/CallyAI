@@ -19,7 +19,7 @@ public class FoodApiService {
     @Value("${deepseek.api.url:https://api.deepseek.com/chat/completions}")
     private String deepseekUrl;
 
-    @Value("${deepseek.api.key:sk-6273a3cf307f47d9ad2b6729517f5501}")
+    @Value("${deepseek.api.key:}")
     private String deepseekKey;
 
     @Value("${deepseek.model:deepseek-chat}")
