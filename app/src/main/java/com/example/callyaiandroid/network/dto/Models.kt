@@ -35,3 +35,29 @@ data class FoodSearchRes(
     val unit: String? = null,
     val source: String? = null
 )
+
+data class FoodCartItem(
+    val name: String,
+    val calories: Int,      // kcal per unit
+    var quantity: Int = 1   // UI will mutate
+)
+
+data class FoodLogItemReq(
+    val name: String,
+    val calories: Int,
+    val quantity: Int
+)
+
+data class FoodLogCreateReq(
+    val consumedAt: String,           // ISO string "yyyy-MM-dd'T'HH:mm:ss"
+    val items: List<FoodLogItemReq>
+)
+
+data class FoodLogEntryRes(
+    val id: Long,
+    val name: String,
+    val calories: Int,                // per unit
+    val quantity: Int,
+    val totalCalories: Int,
+    val consumedAt: String
+)

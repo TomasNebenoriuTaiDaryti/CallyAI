@@ -24,6 +24,11 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
 
+    val emailValid = remember(email) {
+        email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+    val canSubmit = !st.loading && emailValid && pass.isNotBlank()
+
     LaunchedEffect(st.generalError) {
         st.generalError?.let { msg ->
             showSnack(msg)
@@ -72,8 +77,13 @@ fun LoginScreen(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("El. paštas") },
-                    isError = st.emailError != null,
-                    supportingText = { st.emailError?.let { Text(it) } },
+                    isError = st.emailError != null || (email.isNotBlank() && !emailValid),
+                    supportingText = {
+                        when {
+                            st.emailError != null -> Text(st.emailError!!)
+                            email.isNotBlank() && !emailValid -> Text("Neteisingas el. paštas")
+                        }
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -93,7 +103,7 @@ fun LoginScreen(
 
                 Button(
                     onClick = { vm.login(email, pass) },
-                    enabled = !st.loading,
+                    enabled = canSubmit,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(if (st.loading) "Jungiama..." else "Prisijungti")

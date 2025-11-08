@@ -98,22 +98,21 @@ class MainActivity : ComponentActivity() {
                                     startDestination = Dest.Suvestine.route
                                 ) {
                                     composable(Dest.Suvestine.route) {
-                                        Text("Suvestinė – čia rodysime dienos kalorijų tikslą")
+                                        val vm = remember { com.example.callyaiandroid.ui.summary.SummaryViewModel() }
+                                        val currentToken = token
+                                        if (currentToken.isNullOrBlank()) {
+                                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Atsijungta...") }
+                                        } else {
+                                            com.example.callyaiandroid.ui.summary.SummaryScreen(vm, currentToken, showSnack)
+                                        }
                                     }
                                     composable(Dest.Prideti.route) {
                                         val vmAdd = remember { com.example.callyaiandroid.ui.add.AddFoodViewModel() }
                                         val currentToken = token
-
                                         if (currentToken.isNullOrBlank()) {
-                                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                                Text("Atsijungta...")
-                                            }
+                                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Atsijungta...") }
                                         } else {
-                                            com.example.callyaiandroid.ui.add.AddFoodScreen(
-                                                vm = vmAdd,
-                                                token = currentToken,
-                                                showSnack = showSnack
-                                            )
+                                            com.example.callyaiandroid.ui.add.AddFoodScreen(vmAdd, currentToken, showSnack)
                                         }
                                     }
                                     composable(Dest.Profilis.route) {

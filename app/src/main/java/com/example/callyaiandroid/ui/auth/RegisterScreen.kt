@@ -24,6 +24,12 @@ fun RegisterScreen(
     var pass2 by remember { mutableStateOf("") }
     var kcal by remember { mutableStateOf("2000") }
 
+    val emailValid = remember(email) {
+        email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+    val canSubmit = !st.loading &&
+            name.isNotBlank() && emailValid && pass.isNotBlank() && pass2.isNotBlank()
+
     LaunchedEffect(st.generalError) {
         st.generalError?.let { msg ->
             showSnack(msg)
@@ -60,8 +66,13 @@ fun RegisterScreen(
                 OutlinedTextField(
                     value = email, onValueChange = { email = it },
                     label = { Text("El. paštas") }, singleLine = true,
-                    isError = st.emailError != null,
-                    supportingText = { st.emailError?.let { Text(it) } },
+                    isError = st.emailError != null || (email.isNotBlank() && !emailValid),
+                    supportingText = {
+                        when {
+                            st.emailError != null -> Text(st.emailError!!)
+                            email.isNotBlank() && !emailValid -> Text("Neteisingas el. paštas")
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -94,7 +105,7 @@ fun RegisterScreen(
                             vm.register(name, email, pass, pass2, kcal.toIntOrNull() ?: 2000)
                         }
                     },
-                    enabled = !st.loading,
+                    enabled = canSubmit,
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(if (st.loading) "Kuriama..." else "Registruotis") }
 

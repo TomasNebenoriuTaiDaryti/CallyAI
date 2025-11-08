@@ -1,5 +1,6 @@
 package com.example.callyaiandroid.auth
 
+import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.callyaiandroid.data.Prefs
@@ -34,7 +35,7 @@ class AuthViewModel(private val prefs: Prefs) : ViewModel() {
     fun login(email: String, pass: String) {
         val emailErr =
             if (email.isBlank()) "Laukas privalomas"
-            else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) "Neteisingas el. paštas" else null
+            else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) "Neteisingas el. paštas" else null
         val passErr = if (pass.isBlank()) "Laukas privalomas" else null
         if (emailErr != null || passErr != null) {
             _state.value = _state.value.copy(emailError = emailErr, passError = passErr); return
@@ -44,14 +45,19 @@ class AuthViewModel(private val prefs: Prefs) : ViewModel() {
             _state.value = _state.value.copy(loading = true, generalError = null)
             try {
                 val resp = RetrofitClient.api.login(LoginReq(email, pass))
-                prefs.saveToken(resp.token)
+                val token = resp.token?.trim()
+                if (token.isNullOrEmpty()) {
+                    _state.value = _state.value.copy(loading = false, generalError = "Neteisingi prisijungimo duomenys")
+                    return@launch
+                }
+                prefs.saveToken(token)
                 _state.value = AuthUiState()
             } catch (e: HttpException) {
                 val msg = e.response()?.errorBody()?.string()?.let { json ->
                     try { JSONObject(json).optString("message") } catch (_: Exception) { null }
                 } ?: "Nepavyko prisijungti"
                 _state.value = _state.value.copy(loading = false, generalError = msg)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _state.value = _state.value.copy(loading = false, generalError = "Nepavyko prisijungti")
             }
         }
@@ -66,7 +72,7 @@ class AuthViewModel(private val prefs: Prefs) : ViewModel() {
     ) {
         val emailErr =
             if (email.isBlank()) "Laukas privalomas"
-            else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) "Neteisingas el. paštas" else null
+            else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) "Neteisingas el. paštas" else null
         val passErr = if (pass.isBlank()) "Laukas privalomas" else null
         if (name.isBlank() || emailErr != null || passErr != null) {
             _state.value = _state.value.copy(
@@ -82,14 +88,19 @@ class AuthViewModel(private val prefs: Prefs) : ViewModel() {
                 val resp = RetrofitClient.api.register(
                     RegisterReq(name, email, pass, confirm, kcal)
                 )
-                prefs.saveToken(resp.token)
+                val token = resp.token?.trim()
+                if (token.isNullOrEmpty()) {
+                    _state.value = _state.value.copy(loading = false, generalError = "Registracija nepavyko")
+                    return@launch
+                }
+                prefs.saveToken(token)
                 _state.value = AuthUiState()
             } catch (e: HttpException) {
                 val msg = e.response()?.errorBody()?.string()?.let { json ->
                     try { JSONObject(json).optString("message") } catch (_: Exception) { null }
                 } ?: "Nepavyko sukurti paskyros"
                 _state.value = _state.value.copy(loading = false, generalError = msg)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _state.value = _state.value.copy(loading = false, generalError = "Nepavyko sukurti paskyros")
             }
         }

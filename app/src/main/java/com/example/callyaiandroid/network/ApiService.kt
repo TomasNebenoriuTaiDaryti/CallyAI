@@ -24,4 +24,21 @@ interface ApiService {
         @Header("Authorization") auth: String,
         @Query("q") query: String
     ): FoodSearchRes
+    @POST("diary/log")
+    suspend fun createFoodLog(
+        @Header("Authorization") auth: String,
+        @Body body: FoodLogCreateReq
+    ): Unit
+
+    @GET("diary/day")
+    suspend fun getDayEntries(
+        @Header("Authorization") auth: String,
+        @Query("date") date: String // "yyyy-MM-dd"
+    ): List<FoodLogEntryRes>
+
+    @GET("diary/all")
+    suspend fun diaryAll(
+        @Header("Authorization") auth: String
+    ): List<FoodLogDtos>
+
 }
