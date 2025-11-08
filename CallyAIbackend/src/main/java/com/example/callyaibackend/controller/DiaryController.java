@@ -12,11 +12,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * Diary API
- *  - POST /api/diary/log   : išsaugo krepšelį
- *  - GET  /api/diary/all   : grąžina VISUS vartotojo įrašus (FE pats grupuoja pagal dienas)
- */
 @RestController
 @RequestMapping("/api/diary")
 public class DiaryController {
@@ -29,9 +24,6 @@ public class DiaryController {
         this.sessionRepo = sessionRepo;
     }
 
-    // -----------------------------
-    //  SAVE (krepšelio išsaugojimas)
-    // -----------------------------
     @PostMapping("/log")
     @ResponseStatus(HttpStatus.OK)
     public void log(
@@ -45,17 +37,13 @@ public class DiaryController {
             var e = new FoodLogEntry();
             e.setUser(user);
             e.setName(it.getName());
-            e.setCalories(it.getCalories());    // kcal už pasirinktus gramus (ne per 100 g)
+            e.setCalories(it.getCalories());
             e.setQuantity(it.getQuantity());
-            // NENUSTATOM e.setTotalCalories(...); jei entity jo neturi – nereikia
             e.setConsumedAt(consumedAt);
             repo.save(e);
         }
     }
 
-    // -----------------------------
-    //  ALL (visi įrašai vartotojui)
-    // -----------------------------
     @GetMapping("/all")
     public List<DiaryEntryDto> all(@RequestHeader("Authorization") String authHeader) {
         var user = getUserFromAuth(authHeader);
@@ -63,9 +51,8 @@ public class DiaryController {
 
         var fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
 
-        // Grąžinam FE’ui vidinį DTO su laukais, kurių jam reikia
         return list.stream().map(e -> {
-            int total = e.getCalories() * e.getQuantity(); // jei entity neturi totalCalories – suskaičiuojam
+            int total = e.getCalories() * e.getQuantity();
             String consumedAt = e.getConsumedAt().format(fmt);
             return new DiaryEntryDto(
                     e.getId(),
@@ -78,11 +65,6 @@ public class DiaryController {
         }).toList();
     }
 
-    // -----------------------------
-    //  Helperiai
-    // -----------------------------
-
-    // Ištraukia user'į iš "Authorization: Bearer <token>" per SessionTokenRepo
     private User getUserFromAuth(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing bearer token");
@@ -97,7 +79,6 @@ public class DiaryController {
         return user;
     }
 
-    // Palaikom kelis formatus (tinka ir "2025-11-08T06:47:00", ir "2025-11-08 06:47:00.000000")
     private static final DateTimeFormatter[] ACCEPTED =
             new DateTimeFormatter[]{
                     DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS"),
@@ -110,13 +91,8 @@ public class DiaryController {
         for (var f : ACCEPTED) {
             try { return LocalDateTime.parse(value, f); } catch (Exception ignored) {}
         }
-        // fallback į sekundžių tikslumą
         return LocalDateTime.parse(value.substring(0, 19), ACCEPTED[1]);
     }
-
-    // -----------------------------
-    //  Vidiniai DTO (request/response)
-    // -----------------------------
 
     public static class SaveReq {
         private String consumedAt;
@@ -131,7 +107,7 @@ public class DiaryController {
 
     public static class SaveItem {
         private String name;
-        private Integer calories; // kcal už pasirinktus gramus
+        private Integer calories;
         private Integer quantity;
 
         public String getName() { return name; }
@@ -144,7 +120,6 @@ public class DiaryController {
         public void setQuantity(Integer quantity) { this.quantity = quantity; }
     }
 
-    // Atsakymo DTO, kurį FE moka skaityti
     public static class DiaryEntryDto {
         private final Long id;
         private final String name;

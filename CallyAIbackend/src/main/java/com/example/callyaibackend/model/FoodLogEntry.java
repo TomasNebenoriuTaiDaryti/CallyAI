@@ -28,7 +28,6 @@ public class FoodLogEntry {
         this.consumedAt = consumedAt;
     }
 
-    // getters/setters ...
     public Long getId() { return id; }
     public User getUser() { return user; }
     public String getName() { return name; }

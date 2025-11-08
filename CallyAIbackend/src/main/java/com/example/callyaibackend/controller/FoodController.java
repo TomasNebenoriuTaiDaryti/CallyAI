@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/food") // <— pridėjome /api
+@RequestMapping("/api/food")
 public class FoodController {
 
     private final FoodApiService foodApi;
@@ -15,7 +15,6 @@ public class FoodController {
         this.foodApi = foodApi;
     }
 
-    // Android kviečia: GET /api/food/search?q=apple
     @GetMapping("/search")
     public ResponseEntity<FoodResponse> search(
             @RequestParam("q") String q

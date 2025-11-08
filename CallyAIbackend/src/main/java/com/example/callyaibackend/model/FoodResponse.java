@@ -3,8 +3,8 @@ package com.example.callyaibackend.model;
 public class FoodResponse {
     private String name;
     private int calories;
-    private String unit;   // pvz. "per 100 g"
-    private String source; // "deepseek" arba "fallback"
+    private String unit;
+    private String source;
 
     public FoodResponse() { }
 

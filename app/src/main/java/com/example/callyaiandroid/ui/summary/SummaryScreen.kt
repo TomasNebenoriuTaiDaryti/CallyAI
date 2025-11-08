@@ -45,12 +45,11 @@ fun SummaryScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier
-                .weight(1f)           // <- užima likusią vietą ir leidžia scroll'inti
+                .weight(1f)
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 80.dp) // kad nelįstų po bottom bar
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
-            // Grupės pagal dienas
             st.groups.forEach { group ->
                 item(key = "header-${group.date}") {
                     val d = group.date

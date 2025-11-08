@@ -33,7 +33,7 @@ interface ApiService {
     @GET("diary/day")
     suspend fun getDayEntries(
         @Header("Authorization") auth: String,
-        @Query("date") date: String // "yyyy-MM-dd"
+        @Query("date") date: String
     ): List<FoodLogEntryRes>
 
     @GET("diary/all")

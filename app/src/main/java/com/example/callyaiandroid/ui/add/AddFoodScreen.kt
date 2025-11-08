@@ -37,7 +37,6 @@ fun AddFoodScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Paieška
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -63,7 +62,6 @@ fun AddFoodScreen(
             }
         }
 
-        // Krepšelis
         if (st.cart.isNotEmpty()) {
             Text("Krepšelis", style = MaterialTheme.typography.titleMedium)
             LazyColumn(
@@ -88,7 +86,6 @@ fun AddFoodScreen(
                                 )
                             }
 
-                            // gramų redagavimas
                             OutlinedTextField(
                                 value = item.grams.toString(),
                                 onValueChange = { vm.setGrams(index, it) },
@@ -99,7 +96,6 @@ fun AddFoodScreen(
                             )
                             Spacer(Modifier.width(8.dp))
 
-                            // Kiekis +/- (jei qty==1 ir spaudžiam -, ištrins)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = { vm.decQty(index) }) {
                                     Icon(Icons.Outlined.Remove, contentDescription = "minus")
@@ -115,7 +111,6 @@ fun AddFoodScreen(
                             }
                             Spacer(Modifier.width(12.dp))
 
-                            // Bendra kcal (už grams * qty)
                             Text("${item.totalKcal} kcal", fontWeight = FontWeight.Bold)
                         }
                     }
@@ -123,7 +118,6 @@ fun AddFoodScreen(
             }
         }
 
-        // Data / laikas + suvestinė + Išsaugoti
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { showDate = true }) {
@@ -150,7 +144,6 @@ fun AddFoodScreen(
         }
     }
 
-    // Date picker
     if (showDate) {
         val state = rememberDatePickerState()
         DatePickerDialog(
@@ -169,7 +162,6 @@ fun AddFoodScreen(
         ) { DatePicker(state = state) }
     }
 
-    // Time picker (Material3)
     if (showTime) {
         val initial = st.consumedAt.toLocalTime()
         val tp = rememberTimePickerState(
@@ -194,7 +186,6 @@ fun AddFoodScreen(
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
     }
 
-    // Žinutės
     LaunchedEffect(st.message) {
         st.message?.let { showSnack(it) }
     }

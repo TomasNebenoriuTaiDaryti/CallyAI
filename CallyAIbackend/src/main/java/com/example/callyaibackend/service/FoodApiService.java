@@ -28,7 +28,6 @@ public class FoodApiService {
     private static final ObjectMapper M = new ObjectMapper();
 
     public FoodResponse search(String query) {
-        // Jeigu raktas nesukonfigūruotas – turim saugų fallback'ą, kad UI veiktų
         if (deepseekKey == null || deepseekKey.isBlank()) {
             int cal = switch (query.trim().toLowerCase()) {
                 case "apple" -> 52;
@@ -40,7 +39,6 @@ public class FoodApiService {
         }
 
         try {
-            // 1) DeepSeek – OpenAI compatible chat completions
             ObjectNode root = M.createObjectNode();
             root.put("model", model);
 
@@ -74,7 +72,6 @@ public class FoodApiService {
                 throw new RuntimeException("DeepSeek error: " + resp.statusCode() + " -> " + resp.body());
             }
 
-            // 2) Paimam modelio atsakymo tekstą ir išparsai­nom JSON
             JsonNode json = M.readTree(resp.body());
             String content = json.path("choices").get(0).path("message").path("content").asText("{}");
 
@@ -85,7 +82,6 @@ public class FoodApiService {
 
             return new FoodResponse(cap(name), calories, unit, "deepseek");
         } catch (Exception e) {
-            // jei kas nors ne taip – grąžinam aiškią klaidą UI
             throw new RuntimeException("Nepavyko gauti kalorijų iš DeepSeek", e);
         }
     }

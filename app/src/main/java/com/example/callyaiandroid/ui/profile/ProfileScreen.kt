@@ -109,7 +109,6 @@ fun ProfileScreen(
             }
         }
 
-        // Nustatymai
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
@@ -144,7 +143,6 @@ fun ProfileScreen(
             }
         }
 
-        // Apie aplikaciją
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(

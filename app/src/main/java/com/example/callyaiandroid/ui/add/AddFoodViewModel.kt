@@ -19,9 +19,9 @@ import kotlin.math.roundToInt
 
 data class CartItem(
     val name: String,
-    val caloriesPer100g: Int,     // bazė skaičiavimui
-    val grams: Int = 100,         // redaguojamas kiekis gramais
-    val qty: Int = 1,             // vienetų skaičius (kiek porcijų)
+    val caloriesPer100g: Int,
+    val grams: Int = 100,
+    val qty: Int = 1,
     val unit: String = "per 100 g"
 ) {
     val perServingKcal: Int
@@ -45,8 +45,6 @@ class AddFoodViewModel : ViewModel() {
     val st: StateFlow<AddFoodState> = _st
 
     private val dtFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-
-    // --- SEARCH ---
     fun search(token: String, query: String) {
         if (query.isBlank()) {
             _st.value = _st.value.copy(message = "Įveskite maisto pavadinimą")
@@ -67,8 +65,6 @@ class AddFoodViewModel : ViewModel() {
             }
         }
     }
-
-    // --- CART ---
     fun addLastResultToCart() {
         val r = _st.value.result ?: return
         val item = CartItem(
@@ -95,7 +91,7 @@ class AddFoodViewModel : ViewModel() {
         if (index in list.indices) {
             val it = list[index]
             if (it.qty <= 1) {
-                list.removeAt(index)          // 2) ištrinti kai qty==1 ir spaudžiam „–“
+                list.removeAt(index)
             } else {
                 list[index] = it.copy(qty = it.qty - 1)
             }
@@ -120,8 +116,6 @@ class AddFoodViewModel : ViewModel() {
             _st.value = _st.value.copy(cart = list)
         }
     }
-
-    // --- DATA / LAIKAS ---
     fun setDate(date: LocalDate) {
         val t = _st.value.consumedAt.toLocalTime()
         _st.value = _st.value.copy(consumedAt = LocalDateTime.of(date, t))
@@ -131,8 +125,6 @@ class AddFoodViewModel : ViewModel() {
         val d = _st.value.consumedAt.toLocalDate()
         _st.value = _st.value.copy(consumedAt = LocalDateTime.of(d, time))
     }
-
-    // --- SAVE ---
     fun save(token: String) {
         val items = _st.value.cart
         if (items.isEmpty()) return
@@ -146,14 +138,13 @@ class AddFoodViewModel : ViewModel() {
                     items = items.map {
                         FoodLogItemReq(
                             name = it.name,
-                            calories = it.perServingKcal, // kcal už pasirinktus gramus
+                            calories = it.perServingKcal,
                             quantity = it.qty
                         )
                     }
                 )
 
                 RetrofitClient.api.createFoodLog("Bearer $token", req)
-                // sėkmė – išvalom krepšelį
                 _st.value = _st.value.copy(
                     loading = false,
                     cart = emptyList(),
