@@ -138,7 +138,8 @@ class AddFoodViewModel : ViewModel() {
                     items = items.map {
                         FoodLogItemReq(
                             name = it.name,
-                            calories = it.perServingKcal,
+                            caloriesPer100g = it.caloriesPer100g,
+                            grams = it.grams,
                             quantity = it.qty
                         )
                     }

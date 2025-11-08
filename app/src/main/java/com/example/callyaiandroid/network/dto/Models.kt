@@ -1,5 +1,6 @@
 package com.example.callyaiandroid.network.dto
 
+import com.google.gson.annotations.SerializedName
 data class RegisterReq(
     val name: String,
     val email: String,
@@ -44,7 +45,8 @@ data class FoodCartItem(
 
 data class FoodLogItemReq(
     val name: String,
-    val calories: Int,
+    val caloriesPer100g: Int,
+    val grams: Int,
     val quantity: Int
 )
 
@@ -56,8 +58,16 @@ data class FoodLogCreateReq(
 data class FoodLogEntryRes(
     val id: Long,
     val name: String,
-    val calories: Int,
+    @SerializedName("calories")
+    val portionCalories: Int,
+    val caloriesPer100g: Int,
+    val grams: Int,
     val quantity: Int,
     val totalCalories: Int,
     val consumedAt: String
+)
+
+data class FoodLogUpdateReq(
+    val grams: Int,
+    val quantity: Int
 )

@@ -30,6 +30,13 @@ interface ApiService {
         @Body body: FoodLogCreateReq
     ): Unit
 
+    @PUT("diary/log/{id}")
+    suspend fun updateFoodLog(
+        @Header("Authorization") auth: String,
+        @Path("id") id: Long,
+        @Body body: FoodLogUpdateReq
+    ): FoodLogEntryRes
+
     @GET("diary/day")
     suspend fun getDayEntries(
         @Header("Authorization") auth: String,

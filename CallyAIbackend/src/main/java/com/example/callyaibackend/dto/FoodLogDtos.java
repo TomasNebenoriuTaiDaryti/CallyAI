@@ -6,7 +6,8 @@ import java.util.List;
 public class FoodLogDtos {
     public static class ItemReq {
         public String name;
-        public int calories;
+        public int caloriesPer100g;
+        public int grams;
         public int quantity;
     }
 
@@ -19,7 +20,9 @@ public class FoodLogDtos {
         public long id;
         public String name;
         public int calories;
+        public int caloriesPer100g;
         public int quantity;
+        public int grams;
         public int totalCalories;
         public String consumedAt;
     }
