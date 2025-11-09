@@ -9,8 +9,6 @@ public class AuthDtos {
         @Email(message="Neteisingas el. paštas") @NotBlank(message="Laukas privalomas") private String email;
         @NotBlank(message="Laukas privalomas") private String password;
         @NotBlank(message="Laukas privalomas") private String confirmPassword;
-
-        private Integer dailyCalories = 2000;
     }
     @Getter @Setter public static class LoginReq {
         @Email(message="Neteisingas el. paštas") @NotBlank(message="Laukas privalomas") private String email;

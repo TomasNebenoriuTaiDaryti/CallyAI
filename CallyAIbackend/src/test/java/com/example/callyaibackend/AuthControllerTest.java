@@ -47,7 +47,6 @@ class AuthControllerTest {
         req.setEmail("jonas@example.com");
         req.setPassword("slaptas123");
         req.setConfirmPassword("slaptas123");
-        req.setDailyCalories(2100);
         return req;
     }
 

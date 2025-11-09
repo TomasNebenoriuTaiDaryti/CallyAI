@@ -49,7 +49,7 @@ class AuthServiceTest {
         req.setEmail("jonas@example.com");
         req.setPassword("slaptas");
         req.setConfirmPassword("slaptas");
-        req.setDailyCalories(2100);
+        //req.setDailyCalories(2100);
 
         when(userRepo.findByEmail("jonas@example.com")).thenReturn(Optional.empty());
         when(userRepo.save(any(User.class))).thenAnswer(invocation -> {
@@ -73,7 +73,7 @@ class AuthServiceTest {
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepo).save(userCaptor.capture());
         User stored = userCaptor.getValue();
-        assertThat(stored.getDailyCalories()).isEqualTo(2100);
+        assertThat(stored.getDailyCalories()).isEqualTo(2000);
         assertThat(encoder.matches("slaptas", stored.getPasswordHash())).isTrue();
     }
 
