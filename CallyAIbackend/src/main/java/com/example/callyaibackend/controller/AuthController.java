@@ -1,9 +1,11 @@
 package com.example.callyaibackend.controller;
 
 import com.example.callyaibackend.dto.AuthDtos.*;
+import com.example.callyaibackend.dto.CaloriePlanDtos.CaloriePlanRequest;
 import com.example.callyaibackend.dto.UpdateProfileReq;
 import com.example.callyaibackend.model.User;
 import com.example.callyaibackend.service.AuthService;
+import com.example.callyaibackend.service.CaloriePlanService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +17,8 @@ import java.util.Map;
 @CrossOrigin(origins="*")
 public class AuthController {
     private final AuthService auth;
-    public AuthController(AuthService a){ this.auth=a; }
+    private final CaloriePlanService caloriePlan;
+    public AuthController(AuthService a, CaloriePlanService plan){ this.auth=a; this.caloriePlan=plan; }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterReq req){
@@ -65,6 +68,19 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e){
             return ResponseEntity.badRequest().body(Map.of("message", "Nepavyko atnaujinti"));
+        }
+    }
+
+    @PostMapping("/calories/plan")
+    public ResponseEntity<?> calculateCalories(@RequestHeader("Authorization") String authz,
+                                               @Valid @RequestBody CaloriePlanRequest req){
+        try {
+            auth.requireUser(authz);
+            return ResponseEntity.ok(caloriePlan.calculate(req));
+        } catch (IllegalArgumentException e){
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e){
+            return ResponseEntity.badRequest().body(Map.of("message", "Nepavyko gauti rekomendacijos"));
         }
     }
 

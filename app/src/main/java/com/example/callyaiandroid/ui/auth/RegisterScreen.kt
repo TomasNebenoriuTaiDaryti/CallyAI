@@ -22,7 +22,6 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var pass2 by remember { mutableStateOf("") }
-    var kcal by remember { mutableStateOf("2000") }
 
     val emailValid = remember(email) {
         email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
@@ -89,11 +88,6 @@ fun RegisterScreen(
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = kcal, onValueChange = { kcal = it.filter(Char::isDigit) },
-                    label = { Text("Dienos tikslas (kcal)") }, singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
 
                 Spacer(Modifier.height(16.dp))
 
@@ -102,7 +96,7 @@ fun RegisterScreen(
                         if (pass != pass2) {
                             vm.setError("Slaptažodžiai nesutampa")
                         } else {
-                            vm.register(name, email, pass, pass2, kcal.toIntOrNull() ?: 2000)
+                            vm.register(name, email, pass, pass2)
                         }
                     },
                     enabled = canSubmit,

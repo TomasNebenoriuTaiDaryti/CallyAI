@@ -27,8 +27,6 @@ public class AuthService {
         u.setEmail(r.getEmail());
         u.setPasswordHash(enc.encode(r.getPassword()));
 
-        if (r.getDailyCalories()!=null) u.setDailyCalories(r.getDailyCalories());
-
         users.save(u);
         SessionToken st = tokens.save(SessionToken.create(u));
         return new AuthResp(st.getToken(), u.getId(), u.getName());

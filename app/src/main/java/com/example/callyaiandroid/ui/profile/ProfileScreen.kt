@@ -1,11 +1,14 @@
 package com.example.callyaiandroid.ui.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material3.*
@@ -50,10 +53,19 @@ fun ProfileScreen(
 
     var name by remember(user) { mutableStateOf(user.name) }
     var email by remember(user) { mutableStateOf(user.email) }
-    var kcal by remember(user) { mutableStateOf(user.dailyCalories.toString()) }
+    var kcal by remember(user) { mutableStateOf((user.dailyCalories ?: 2000).toString()) }
+    var goal by remember(user) { mutableStateOf("maintain") }
+    var weightInput by remember(user) { mutableStateOf("") }
+    var heightInput by remember(user) { mutableStateOf("") }
 
     LaunchedEffect(st.message) {
         st.message?.let { showSnack(it) }
+    }
+
+    LaunchedEffect(st.calcCalories) {
+        st.calcCalories?.let { calculated ->
+            kcal = calculated.toString()
+        }
     }
 
     Column(
@@ -140,6 +152,117 @@ fun ProfileScreen(
                         )
                     }
                 )
+            }
+        }
+
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            )
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Apskaičiuokite dienos kalorijas",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "Pasirinkite tikslą ir įveskite savo dabartinį svorį bei ūgį. Dirbtinis intelektas pasiūlys dienos kalorijų tikslą.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                val options = listOf(
+                    "lose" to "Mažinti svorį",
+                    "maintain" to "Išlaikyti svorį",
+                    "gain" to "Priaugti svorio"
+                )
+
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    options.forEach { (value, label) ->
+                        FilterChip(
+                            selected = goal == value,
+                            onClick = { goal = value },
+                            label = { Text(label) },
+                            leadingIcon = if (goal == value) {
+                                { Icon(Icons.Filled.Check, contentDescription = null) }
+                            } else null
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = weightInput,
+                    onValueChange = { raw ->
+                        val sanitized = raw.replace(',', '.')
+                        if (sanitized.count { it == '.' } <= 1) {
+                            weightInput = sanitized.filter { it.isDigit() || it == '.' }
+                        }
+                    },
+                    label = { Text("Svoris (kg)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = heightInput,
+                    onValueChange = { raw ->
+                        val sanitized = raw.replace(',', '.')
+                        if (sanitized.count { it == '.' } <= 1) {
+                            heightInput = sanitized.filter { it.isDigit() || it == '.' }
+                        }
+                    },
+                    label = { Text("Ūgis (cm)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Button(
+                    onClick = {
+                        val weight = weightInput.toDoubleOrNull()
+                        if (weight == null || weight <= 0) {
+                            showSnack("Įveskite teisingą svorį")
+                            return@Button
+                        }
+                        val height = heightInput.toDoubleOrNull()
+                        if (height == null || height <= 0) {
+                            showSnack("Įveskite teisingą ūgį")
+                            return@Button
+                        }
+                        vm.calculateDailyCalories(token, goal, weight, height)
+                    },
+                    enabled = !st.calcLoading,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (st.calcLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Skaičiuojama...")
+                    } else {
+                        Text("Apskaičiuoti su dirbtiniu intelektu")
+                    }
+                }
+
+                st.calcCalories?.let { target ->
+                    Text(
+                        "Rekomenduojamas tikslas: $target kcal",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                st.calcAdvice?.takeIf { it.isNotBlank() }?.let { advice ->
+                    Text(advice, style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
 

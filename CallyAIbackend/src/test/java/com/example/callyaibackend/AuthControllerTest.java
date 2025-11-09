@@ -4,9 +4,12 @@ import com.example.callyaibackend.controller.AuthController;
 import com.example.callyaibackend.dto.AuthDtos.AuthResp;
 import com.example.callyaibackend.dto.AuthDtos.LoginReq;
 import com.example.callyaibackend.dto.AuthDtos.RegisterReq;
+import com.example.callyaibackend.dto.CaloriePlanDtos.CaloriePlanRequest;
+import com.example.callyaibackend.dto.CaloriePlanDtos.CaloriePlanResponse;
 import com.example.callyaibackend.dto.UpdateProfileReq;
 import com.example.callyaibackend.model.User;
 import com.example.callyaibackend.service.AuthService;
+import com.example.callyaibackend.service.CaloriePlanService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,13 +44,15 @@ class AuthControllerTest {
     @MockBean
     private AuthService authService;
 
+    @MockBean
+    private CaloriePlanService caloriePlanService;
+
     private static RegisterReq buildRegisterRequest() {
         RegisterReq req = new RegisterReq();
         req.setName("Jonas");
         req.setEmail("jonas@example.com");
         req.setPassword("slaptas123");
         req.setConfirmPassword("slaptas123");
-        req.setDailyCalories(2100);
         return req;
     }
 
@@ -196,5 +201,27 @@ class AuthControllerTest {
                         .header("Authorization", "Bearer bad-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Atsijungta"));
+    }
+
+    @Test
+    @DisplayName("Calorie plan endpoint returns recommendation")
+    void caloriePlanReturnsRecommendation() throws Exception {
+        when(authService.requireUser("Bearer user-token"))
+                .thenReturn(new User());
+        when(caloriePlanService.calculate(any(CaloriePlanRequest.class)))
+                .thenReturn(new CaloriePlanResponse(2200, "Valgykite subalansuotai"));
+
+        CaloriePlanRequest req = new CaloriePlanRequest();
+        req.setGoal("maintain");
+        req.setWeightKg(72.0);
+        req.setHeightCm(178.0);
+
+        mockMvc.perform(post("/api/auth/calories/plan")
+                        .header("Authorization", "Bearer user-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dailyCalories").value(2200))
+                .andExpect(jsonPath("$.advice").value("Valgykite subalansuotai"));
     }
 }
