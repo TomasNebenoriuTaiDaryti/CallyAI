@@ -30,7 +30,7 @@ data class FoodLogItem(
     val carbs: Double,
     val totalProtein: Double,
     val totalFat: Double,
-    val totalCarbs: Double,
+    val totalCarbs: Double
 )
 
 data class DayGroup(
@@ -39,7 +39,7 @@ data class DayGroup(
     val dayTotal: Int,
     val proteinTotal: Double,
     val fatTotal: Double,
-    val carbsTotal: Double,
+    val carbsTotal: Double
 )
 enum class SummaryPeriodType { DAY, WEEK, MONTH }
 data class SummaryState(
@@ -51,6 +51,7 @@ data class SummaryState(
     val periodType: SummaryPeriodType = SummaryPeriodType.DAY,
     val periodStart: LocalDate = LocalDate.now(),
     val periodEnd: LocalDate = LocalDate.now(),
+    val deletingItemId: Long? = null
 ) {
     val periodGroups: List<DayGroup>
         get() = groups.filter { !it.date.isBefore(periodStart) && !it.date.isAfter(periodEnd) }
@@ -155,6 +156,7 @@ class SummaryViewModel(private val prefs: Prefs) : ViewModel() {
                         loading = false,
                         groups = grouped,
                         updatingItemId = null,
+                        deletingItemId = null,
                         periodStart = start,
                         periodEnd = end
                     )
@@ -162,7 +164,8 @@ class SummaryViewModel(private val prefs: Prefs) : ViewModel() {
                     current.copy(
                         loading = false,
                         groups = grouped,
-                        updatingItemId = null
+                        updatingItemId = null,
+                        deletingItemId = null
                     )
                 }
 
@@ -171,9 +174,9 @@ class SummaryViewModel(private val prefs: Prefs) : ViewModel() {
                 val msg = e.response()?.errorBody()?.string()?.let {
                     try { JSONObject(it).optString("message") } catch (_: Exception) { null }
                 } ?: "Nepavyko įkelti suvestinės"
-                _st.value = _st.value.copy(loading = false, error = msg, updatingItemId = null)
+                _st.value = _st.value.copy(loading = false, error = msg, updatingItemId = null, deletingItemId = null)
             } catch (_: Exception) {
-                _st.value = _st.value.copy(loading = false, error = "Nepavyko įkelti suvestinės", updatingItemId = null)
+                _st.value = _st.value.copy(loading = false, error = "Nepavyko įkelti suvestinės", updatingItemId = null, deletingItemId = null)
             }
         }
     }
@@ -359,4 +362,45 @@ class SummaryViewModel(private val prefs: Prefs) : ViewModel() {
     }
 
     private fun LocalDate.endOfMonth(): LocalDate = this.withDayOfMonth(this.lengthOfMonth())
+
+    fun deleteItem(token: String, itemId: Long) {
+        viewModelScope.launch {
+            try {
+                _st.value = _st.value.copy(deletingItemId = itemId, message = null, error = null)
+
+                RetrofitClient.api.deleteFoodLog("Bearer $token", itemId)
+
+                val newGroups = _st.value.groups.mapNotNull { group ->
+                    val remaining = group.items.filterNot { it.id == itemId }
+                    if (remaining.size == group.items.size) {
+                        group
+                    } else if (remaining.isEmpty()) {
+                        null
+                    } else {
+                        group.copy(
+                            items = remaining,
+                            dayTotal = remaining.sumOf { it.totalCalories },
+                            proteinTotal = remaining.sumOf { it.totalProtein },
+                            fatTotal = remaining.sumOf { it.totalFat },
+                            carbsTotal = remaining.sumOf { it.totalCarbs }
+                        )
+                    }
+                }
+
+                _st.value = _st.value.copy(
+                    groups = newGroups,
+                    deletingItemId = null,
+                    message = "Įrašas pašalintas"
+                )
+                saveCache(newGroups)
+            } catch (e: HttpException) {
+                val msg = e.response()?.errorBody()?.string()?.let {
+                    try { JSONObject(it).optString("message") } catch (_: Exception) { null }
+                } ?: "Nepavyko pašalinti įrašo"
+                _st.value = _st.value.copy(deletingItemId = null, error = msg)
+            } catch (_: Exception) {
+                _st.value = _st.value.copy(deletingItemId = null, error = "Nepavyko pašalinti įrašo")
+            }
+        }
+    }
 }

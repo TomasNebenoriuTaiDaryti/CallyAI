@@ -20,7 +20,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
+import androidx.compose.material.icons.filled.Close
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SummaryScreen(
@@ -30,6 +30,7 @@ fun SummaryScreen(
 ) {
     val st by vm.st.collectAsState()
     var editingItem by remember { mutableStateOf<FoodLogItem?>(null) }
+    var deletingItem by remember { mutableStateOf<FoodLogItem?>(null) }
 
     LaunchedEffect(token) { vm.loadAll(token) }
     LaunchedEffect(st.error) { st.error?.let(showSnack) }
@@ -171,7 +172,12 @@ fun SummaryScreen(
                         items = group.items,
                         key = { it.id }
                     ) { item ->
-                        SummaryEntryCard(item = item, onEdit = { editingItem = item })
+                        SummaryEntryCard(
+                            item = item,
+                            onEdit = { editingItem = item },
+                            onDelete = { deletingItem = item },
+                            deleting = st.deletingItemId == item.id
+                        )
                     }
                 }
             }
@@ -251,6 +257,49 @@ fun SummaryScreen(
                 }
             )
         }
+        deletingItem?.let { item ->
+            var submitted by remember(item.id) { mutableStateOf(false) }
+            val deleting = st.deletingItemId == item.id
+
+            LaunchedEffect(st.deletingItemId) {
+                if (submitted && st.deletingItemId != item.id) {
+                    deletingItem = null
+                    submitted = false
+                }
+            }
+
+            AlertDialog(
+                onDismissRequest = {
+                    if (!deleting) {
+                        deletingItem = null
+                        submitted = false
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            submitted = true
+                            vm.deleteItem(token, item.id)
+                        },
+                        enabled = !deleting
+                    ) {
+                        Text(if (deleting) "Šalinama..." else "Taip")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            if (!deleting) {
+                                deletingItem = null
+                                submitted = false
+                            }
+                        }
+                    ) { Text("Ne") }
+                },
+                title = { Text("Pašalinti įrašą?") },
+                text = { Text("Ar tikrai norite pašalinti \"${item.name}\" įrašą?") }
+            )
+        }
     }
     if (showDatePicker) {
         DatePickerDialog(
@@ -292,7 +341,7 @@ fun SummaryScreen(
 }
 
 @Composable
-private fun SummaryEntryCard(item: FoodLogItem, onEdit: () -> Unit) {
+private fun SummaryEntryCard(item: FoodLogItem, onEdit: () -> Unit, onDelete: () -> Unit, deleting: Boolean) {
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     ElevatedCard {
         Column(
@@ -307,7 +356,16 @@ private fun SummaryEntryCard(item: FoodLogItem, onEdit: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(item.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                Text(item.consumedAt.format(timeFormatter), style = MaterialTheme.typography.bodyMedium)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(item.consumedAt.format(timeFormatter), style = MaterialTheme.typography.bodyMedium)
+                    IconButton(onClick = onDelete, enabled = !deleting) {
+                        if (deleting) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Filled.Close, contentDescription = "Pašalinti įrašą")
+                        }
+                    }
+                }
             }
             Text("Gramai: ${item.grams} g", style = MaterialTheme.typography.bodyMedium)
             Text("Kiekis: ${item.quantity}", style = MaterialTheme.typography.bodyMedium)

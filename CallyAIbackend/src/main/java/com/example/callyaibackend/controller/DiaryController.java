@@ -91,6 +91,24 @@ public class DiaryController {
         return toDto(entry);
     }
 
+    @DeleteMapping("/log/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long id
+    ) {
+        var user = getUserFromAuth(authHeader);
+        var entry = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Įrašas nerastas"));
+
+        if (!entry.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Negalite pašalinti šio įrašo");
+        }
+
+        repo.delete(entry);
+    }
+
+
     private User getUserFromAuth(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing bearer token");

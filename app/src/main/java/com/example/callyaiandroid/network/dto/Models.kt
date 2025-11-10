@@ -97,3 +97,5 @@ data class FoodLogUpdateReq(
     val grams: Int,
     val quantity: Int
 )
+
+data class ForgotPasswordReq(val email: String)

@@ -57,7 +57,8 @@ public class AuthController {
 
     @PostMapping("/forgot")
     public ResponseEntity<?> forgot(@Valid @RequestBody ForgotReq req) {
-        return ResponseEntity.ok(msg("Jei paskyra egzistuoja – išsiuntėme atstatymo nuorodą"));
+        auth.createPasswordReset(req.getEmail());
+        return ResponseEntity.ok(msg("Jei paskyra egzistuoja – slaptažodis atstatytas į 123"));
     }
 
     // 👇 Čia įdėtas trūkstamas mapping'as

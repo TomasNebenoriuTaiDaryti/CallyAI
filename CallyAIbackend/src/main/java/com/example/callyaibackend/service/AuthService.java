@@ -9,10 +9,17 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
-    private final UserRepo users; private final SessionTokenRepo tokens;
+    private final UserRepo users;
+    private final SessionTokenRepo tokens;
+    private final PasswordResetTokenRepo resetTokens;
+
     private final BCryptPasswordEncoder enc = new BCryptPasswordEncoder();
 
-    public AuthService(UserRepo u, SessionTokenRepo t){ this.users=u; this.tokens=t; }
+    public AuthService(UserRepo u, SessionTokenRepo t, PasswordResetTokenRepo r){
+        this.users=u;
+        this.tokens=t;
+        this.resetTokens=r;
+    }
 
     public AuthResp register(RegisterReq r){
         if (!r.getPassword().equals(r.getConfirmPassword()))
@@ -42,6 +49,15 @@ public class AuthService {
     }
 
     public void logout(String token){ tokens.deleteByToken(token); }
+    
+    public void createPasswordReset(String email) {
+        users.findByEmail(email).ifPresent(user -> {
+            resetTokens.deleteAllByUser(user);
+            resetTokens.save(PasswordResetToken.create(user));
+            user.setPasswordHash(enc.encode("123"));
+            users.save(user);
+        });
+    }
 
     public User requireUser(String bearer){
         if(bearer==null || !bearer.startsWith("Bearer ")) throw new RuntimeException("Nepavyko prisijungti");

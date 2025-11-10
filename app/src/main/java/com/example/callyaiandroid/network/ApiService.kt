@@ -54,4 +54,14 @@ interface ApiService {
         @Header("Authorization") auth: String
     ): List<FoodLogDtos>
 
+    @POST("auth/forgot")
+    suspend fun forgotPassword(@Body body: ForgotPasswordReq): Map<String, String>
+
+    @DELETE("diary/log/{id}")
+    suspend fun deleteFoodLog(
+        @Header("Authorization") auth: String,
+        @Path("id") id: Long
+    ): Unit
+
+
 }

@@ -23,7 +23,10 @@ fun LoginScreen(
     val st by vm.state.collectAsState()
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
-
+    var showForgotDialog by remember { mutableStateOf(false) }
+    var forgotEmail by remember { mutableStateOf("") }
+    var forgotEmailError by remember { mutableStateOf<String?>(null) }
+    var forgotSubmitted by remember { mutableStateOf(false) }
     val emailValid = remember(email) {
         email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
@@ -33,6 +36,16 @@ fun LoginScreen(
         st.generalError?.let { msg ->
             showSnack(msg)
             vm.clearError()
+            forgotSubmitted = false
+        }
+    }
+
+    LaunchedEffect(st.infoMessage) {
+        st.infoMessage?.let { msg ->
+            showSnack(msg)
+            vm.clearInfoMessage()
+            showForgotDialog = false
+            forgotSubmitted = false
         }
     }
 
@@ -111,7 +124,67 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(8.dp))
                 TextButton(onClick = onRegister) { Text("Neturite paskyros? Registruotis") }
+                TextButton(
+                    onClick = {
+                        forgotEmail = email
+                        forgotEmailError = null
+                        showForgotDialog = true
+                    }
+                ) { Text("Pamiršote slaptažodį?") }
             }
         }
+    }
+    if (showForgotDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!st.loading) {
+                    showForgotDialog = false
+                    forgotSubmitted = false
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val valid = android.util.Patterns.EMAIL_ADDRESS.matcher(forgotEmail).matches()
+                        if (!valid) {
+                            forgotEmailError = "Neteisingas el. paštas"
+                            return@TextButton
+                        }
+                        forgotSubmitted = true
+                        vm.forgotPassword(forgotEmail)
+                    },
+                    enabled = !st.loading
+                ) {
+                    Text(if (st.loading && forgotSubmitted) "Siunčiama..." else "Patvirtinti")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        if (!st.loading) {
+                            showForgotDialog = false
+                            forgotSubmitted = false
+                        }
+                    }
+                ) { Text("Atšaukti") }
+            },
+            title = { Text("Atstatyti slaptažodį") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Įveskite savo el. pašto adresą. Slaptažodis bus nustatytas į 123.")
+                    OutlinedTextField(
+                        value = forgotEmail,
+                        onValueChange = {
+                            forgotEmail = it
+                            if (forgotEmailError != null) forgotEmailError = null
+                        },
+                        label = { Text("El. paštas") },
+                        singleLine = true,
+                        isError = forgotEmailError != null,
+                        supportingText = forgotEmailError?.let { err -> { Text(err) } }
+                    )
+                }
+            }
+        )
     }
 }

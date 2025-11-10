@@ -12,12 +12,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
+import com.example.callyaiandroid.network.dto.ForgotPasswordReq
 
 data class AuthUiState(
     val loading: Boolean = false,
     val emailError: String? = null,
     val passError: String? = null,
-    val generalError: String? = null
+    val generalError: String? = null,
+    val infoMessage: String? = null
 )
 
 class AuthViewModel(private val prefs: Prefs) : ViewModel() {
@@ -31,7 +33,9 @@ class AuthViewModel(private val prefs: Prefs) : ViewModel() {
     fun setError(msg: String) {
         _state.value = _state.value.copy(generalError = msg)
     }
-
+    fun clearInfoMessage() {
+        _state.value = _state.value.copy(infoMessage = null)
+    }
     fun login(email: String, pass: String) {
         val emailErr =
             if (email.isBlank()) "Laukas privalomas"
@@ -42,7 +46,7 @@ class AuthViewModel(private val prefs: Prefs) : ViewModel() {
         }
 
         viewModelScope.launch {
-            _state.value = _state.value.copy(loading = true, generalError = null)
+            _state.value = _state.value.copy(loading = true, generalError = null, infoMessage = null)
             try {
                 val resp = RetrofitClient.api.login(LoginReq(email, pass))
                 val token = resp.token?.trim()
@@ -82,7 +86,7 @@ class AuthViewModel(private val prefs: Prefs) : ViewModel() {
         if (pass != confirm) { setError("Slaptažodžiai nesutampa"); return }
 
         viewModelScope.launch {
-            _state.value = _state.value.copy(loading = true, generalError = null)
+            _state.value = _state.value.copy(loading = true, generalError = null, infoMessage = null)
             try {
                 val resp = RetrofitClient.api.register(
                     RegisterReq(name, email, pass, confirm)
@@ -101,6 +105,30 @@ class AuthViewModel(private val prefs: Prefs) : ViewModel() {
                 _state.value = _state.value.copy(loading = false, generalError = msg)
             } catch (_: Exception) {
                 _state.value = _state.value.copy(loading = false, generalError = "Nepavyko sukurti paskyros")
+            }
+        }
+    }
+    fun forgotPassword(email: String) {
+        val emailErr =
+            if (email.isBlank()) "Laukas privalomas"
+            else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) "Neteisingas el. paštas" else null
+        if (emailErr != null) {
+            _state.value = _state.value.copy(emailError = emailErr); return
+        }
+
+        viewModelScope.launch {
+            _state.value = _state.value.copy(loading = true, generalError = null, infoMessage = null)
+            try {
+                val resp = RetrofitClient.api.forgotPassword(ForgotPasswordReq(email))
+                val msg = resp["message"] ?: "Slaptažodis atstatytas"
+                _state.value = _state.value.copy(loading = false, infoMessage = msg)
+            } catch (e: HttpException) {
+                val msg = e.response()?.errorBody()?.string()?.let { json ->
+                    try { JSONObject(json).optString("message") } catch (_: Exception) { null }
+                } ?: "Nepavyko atstatyti slaptažodžio"
+                _state.value = _state.value.copy(loading = false, generalError = msg)
+            } catch (_: Exception) {
+                _state.value = _state.value.copy(loading = false, generalError = "Nepavyko atstatyti slaptažodžio")
             }
         }
     }
