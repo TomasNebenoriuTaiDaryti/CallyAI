@@ -29,13 +29,38 @@ public class FoodApiService {
 
     public FoodResponse search(String query) {
         if (deepseekKey == null || deepseekKey.isBlank()) {
-            int cal = switch (query.trim().toLowerCase()) {
-                case "apple" -> 52;
-                case "banana" -> 89;
-                case "chicken breast" -> 165;
-                default -> 100;
-            };
-            return new FoodResponse(cap(query), cal, "per 100 g", "fallback");
+            String normalized = query.trim().toLowerCase();
+            int cal;
+            double protein;
+            double fat;
+            double carbs;
+            switch (normalized) {
+                case "apple" -> {
+                    cal = 52;
+                    protein = 0.3;
+                    fat = 0.2;
+                    carbs = 13.8;
+                }
+                case "banana" -> {
+                    cal = 89;
+                    protein = 1.1;
+                    fat = 0.3;
+                    carbs = 22.8;
+                }
+                case "chicken breast" -> {
+                    cal = 165;
+                    protein = 31.0;
+                    fat = 3.6;
+                    carbs = 0.0;
+                }
+                default -> {
+                    cal = 100;
+                    protein = 5.0;
+                    fat = 3.0;
+                    carbs = 10.0;
+                }
+            }
+            return new FoodResponse(cap(query), cal, "per 100 g", "fallback", protein, fat, carbs);
         }
 
         try {
@@ -47,7 +72,8 @@ public class FoodApiService {
             sys.put("role", "system");
             sys.put("content",
                     "You are a nutrition assistant. Reply ONLY with a compact JSON object: " +
-                            "{\"name\":\"<food>\",\"calories\":<integer>,\"unit\":\"per 100 g\"} . " +
+                            "{\"name\":\"<food>\",\"calories\":<integer>,\"unit\":\"per 100 g\"," +
+                            "\"protein\":<grams>,\"fat\":<grams>,\"carbs\":<grams>} . " +
                             "Do not include any extra text.");
             msgs.add(sys);
 
@@ -80,7 +106,11 @@ public class FoodApiService {
             int calories = j.path("calories").asInt(0);
             String unit = j.path("unit").asText("per 100 g");
 
-            return new FoodResponse(cap(name), calories, unit, "deepseek");
+            double protein = j.path("protein").asDouble(0.0);
+            double fat = j.path("fat").asDouble(0.0);
+            double carbs = j.path("carbs").asDouble(0.0);
+
+            return new FoodResponse(cap(name), calories, unit, "deepseek", protein, fat, carbs);
         } catch (Exception e) {
             throw new RuntimeException("Nepavyko gauti kalorijų iš DeepSeek", e);
         }

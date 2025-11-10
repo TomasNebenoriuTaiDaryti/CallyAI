@@ -19,6 +19,15 @@ public class FoodLogEntry {
     private int quantity;
     private int totalCalories;
     private LocalDateTime consumedAt;
+    private double proteinPer100g;
+    private double fatPer100g;
+    private double carbsPer100g;
+    private double protein;
+    private double fat;
+    private double carbs;
+    private double totalProtein;
+    private double totalFat;
+    private double totalCarbs;
 
     public FoodLogEntry() {}
 
@@ -41,6 +50,15 @@ public class FoodLogEntry {
         public int getQuantity() { return quantity; }
         public int getTotalCalories() { return totalCalories; }
         public LocalDateTime getConsumedAt() { return consumedAt; }
+        public double getProteinPer100g() { return proteinPer100g; }
+        public double getFatPer100g() { return fatPer100g; }
+        public double getCarbsPer100g() { return carbsPer100g; }
+        public double getProtein() { return protein; }
+        public double getFat() { return fat; }
+        public double getCarbs() { return carbs; }
+        public double getTotalProtein() { return totalProtein; }
+        public double getTotalFat() { return totalFat; }
+        public double getTotalCarbs() { return totalCarbs; }
 
         public void setId(Long id) { this.id = id; }
         public void setUser(User user) { this.user = user; }
@@ -64,9 +82,25 @@ public class FoodLogEntry {
         public void setQuantity(int quantity) {
             this.quantity = quantity;
             recalcTotalCalories();
+            recalcTotalMacros();
         }
 
         public void setConsumedAt(LocalDateTime consumedAt) { this.consumedAt = consumedAt; }
+
+        public void setProteinPer100g(double proteinPer100g) {
+            this.proteinPer100g = proteinPer100g;
+            recalcMacros();
+        }
+
+        public void setFatPer100g(double fatPer100g) {
+            this.fatPer100g = fatPer100g;
+            recalcMacros();
+        }
+
+        public void setCarbsPer100g(double carbsPer100g) {
+            this.carbsPer100g = carbsPer100g;
+            recalcMacros();
+        }
 
         private int calculatePortionCalories() {
             if (grams <= 0 || caloriesPer100g <= 0) {
@@ -78,9 +112,30 @@ public class FoodLogEntry {
         private void recalcPortionAndTotal() {
             this.calories = calculatePortionCalories();
             recalcTotalCalories();
+            recalcMacros();
         }
 
         private void recalcTotalCalories() {
             this.totalCalories = this.calories * this.quantity;
+        }
+
+        private double calculateMacro(double per100g) {
+            if (grams <= 0 || per100g <= 0) {
+                return 0.0;
+            }
+            return Math.round((per100g * grams) / 100.0 * 10.0) / 10.0;
+        }
+
+        private void recalcMacros() {
+            this.protein = calculateMacro(proteinPer100g);
+            this.fat = calculateMacro(fatPer100g);
+            this.carbs = calculateMacro(carbsPer100g);
+            recalcTotalMacros();
+        }
+
+        private void recalcTotalMacros() {
+            this.totalProtein = Math.round(this.protein * this.quantity * 10.0) / 10.0;
+            this.totalFat = Math.round(this.fat * this.quantity * 10.0) / 10.0;
+            this.totalCarbs = Math.round(this.carbs * this.quantity * 10.0) / 10.0;
         }
     }

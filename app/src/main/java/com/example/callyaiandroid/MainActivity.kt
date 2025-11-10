@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
                                     startDestination = Dest.Suvestine.route
                                 ) {
                                     composable(Dest.Suvestine.route) {
-                                        val vm = remember { com.example.callyaiandroid.ui.summary.SummaryViewModel() }
+                                        val vm = remember { com.example.callyaiandroid.ui.summary.SummaryViewModel(prefs) }
                                         val currentToken = token
                                         if (currentToken.isNullOrBlank()) {
                                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Atsijungta...") }

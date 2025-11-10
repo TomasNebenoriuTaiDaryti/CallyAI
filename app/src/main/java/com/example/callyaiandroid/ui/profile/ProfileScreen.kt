@@ -23,6 +23,9 @@ import com.example.callyaiandroid.data.Prefs
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 @Composable
 fun ProfileScreen(
     vm: ProfileViewModel,
@@ -67,8 +70,10 @@ fun ProfileScreen(
         }
     }
 
+    val scrollState = rememberScrollState()
+
     Column(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxSize().verticalScroll(scrollState).padding(horizontal = 16.dp, vertical = 8.dp).navigationBarsPadding().imePadding(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("Profilis", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(vertical = 4.dp))
@@ -316,6 +321,8 @@ fun ProfileScreen(
             Spacer(Modifier.width(8.dp))
             Text("Atsijungti")
         }
+        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars.add(WindowInsets.ime)))
     }
 
     if (confirmLogout) {

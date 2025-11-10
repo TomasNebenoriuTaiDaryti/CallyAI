@@ -25,12 +25,23 @@ class ProfileViewModel(private val prefs: Prefs) : ViewModel() {
     private val _st = MutableStateFlow(ProfileState())
     val st: StateFlow<ProfileState> = _st
 
+    init {
+        viewModelScope.launch {
+            prefs.profileCacheFlow.collect { cached ->
+                if (cached != null && _st.value.user == null) {
+                    _st.value = _st.value.copy(user = cached)
+                }
+            }
+        }
+    }
     fun load(token: String) {
         viewModelScope.launch {
             try {
                 _st.value = _st.value.copy(loading = true, message = null)
                 val me = RetrofitClient.api.me("Bearer $token")
                 val resolved = me.copy(dailyCalories = me.dailyCalories ?: 2000)
+                prefs.saveProfileCache(resolved)
+                prefs.setDailyKcal(resolved.dailyCalories ?: 2000)
                 _st.value = ProfileState(user = resolved)
             } catch (e: Exception) {
                 _st.value = ProfileState(message = "Nepavyko įkelti profilio")
@@ -47,6 +58,8 @@ class ProfileViewModel(private val prefs: Prefs) : ViewModel() {
                     UpdateProfileReq(u.name, u.email, u.dailyCalories ?: 2000)
                 )
                 val resolved = updated.copy(dailyCalories = updated.dailyCalories ?: 2000)
+                prefs.saveProfileCache(resolved)
+                prefs.setDailyKcal(resolved.dailyCalories ?: 2000)
                 _st.value = ProfileState(user = resolved, message = "Išsaugota")
             } catch (e: HttpException) {
                 val msg = e.response()?.errorBody()?.string()?.let { json ->

@@ -46,6 +46,9 @@ public class DiaryController {
             e.setCaloriesPer100g(it.getCaloriesPer100g());
             e.setGrams(it.getGrams());
             e.setQuantity(it.getQuantity());
+            e.setProteinPer100g(defaultMacro(it.getProteinPer100g()));
+            e.setFatPer100g(defaultMacro(it.getFatPer100g()));
+            e.setCarbsPer100g(defaultMacro(it.getCarbsPer100g()));
             e.setConsumedAt(consumedAt);
             repo.save(e);
         }
@@ -117,6 +120,7 @@ public class DiaryController {
         return LocalDateTime.parse(value.substring(0, 19), ACCEPTED[1]);
     }
 
+
     private DiaryEntryDto toDto(FoodLogEntry e) {
         var fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
         return new DiaryEntryDto(
@@ -127,8 +131,17 @@ public class DiaryController {
                 e.getQuantity(),
                 e.getGrams(),
                 e.getTotalCalories(),
-                e.getConsumedAt().format(fmt)
+                e.getConsumedAt().format(fmt),
+                e.getProtein(),
+                e.getFat(),
+                e.getCarbs(),
+                e.getTotalProtein(),
+                e.getTotalFat(),
+                e.getTotalCarbs()
         );
+    }
+    private double defaultMacro(Double value) {
+        return value == null ? 0.0 : value;
     }
 
     public static class SaveReq {
@@ -147,6 +160,9 @@ public class DiaryController {
         private Integer caloriesPer100g;
         private Integer quantity;
         private Integer grams;
+        private Double proteinPer100g;
+        private Double fatPer100g;
+        private Double carbsPer100g;
 
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
@@ -159,7 +175,17 @@ public class DiaryController {
 
         public Integer getGrams() { return grams; }
         public void setGrams(Integer grams) { this.grams = grams; }
+
+        public Double getProteinPer100g() { return proteinPer100g; }
+        public void setProteinPer100g(Double proteinPer100g) { this.proteinPer100g = proteinPer100g; }
+
+        public Double getFatPer100g() { return fatPer100g; }
+        public void setFatPer100g(Double fatPer100g) { this.fatPer100g = fatPer100g; }
+
+        public Double getCarbsPer100g() { return carbsPer100g; }
+        public void setCarbsPer100g(Double carbsPer100g) { this.carbsPer100g = carbsPer100g; }
     }
+
 
     public static class DiaryEntryDto {
         private final Long id;
@@ -171,26 +197,49 @@ public class DiaryController {
         private final int totalCalories;
         private final String consumedAt;
 
-        public DiaryEntryDto(Long id, String name, int calories, int caloriesPer100g, int quantity, int grams, int totalCalories, String consumedAt) {
-                this.id = id;
-                this.name = name;
-                this.calories = calories;
-                this.caloriesPer100g = caloriesPer100g;
-                this.quantity = quantity;
-                this.grams = grams;
-                this.totalCalories = totalCalories;
-                this.consumedAt = consumedAt;
-            }
+        private final double protein;
+        private final double fat;
+        private final double carbs;
+        private final double totalProtein;
+        private final double totalFat;
+        private final double totalCarbs;
 
-            public Long getId() { return id; }
-            public String getName() { return name; }
-            public int getCalories() { return calories; }
-            public int getCaloriesPer100g() { return caloriesPer100g; }
-            public int getQuantity() { return quantity; }
-            public int getGrams() { return grams; }
-            public int getTotalCalories() { return totalCalories; }
-            public String getConsumedAt() { return consumedAt; }
+        public DiaryEntryDto(Long id, String name, int calories, int caloriesPer100g, int quantity, int grams,
+                             int totalCalories, String consumedAt,
+                             double protein, double fat, double carbs,
+                             double totalProtein, double totalFat, double totalCarbs) {
+            this.id = id;
+            this.name = name;
+            this.calories = calories;
+            this.caloriesPer100g = caloriesPer100g;
+            this.quantity = quantity;
+            this.grams = grams;
+            this.totalCalories = totalCalories;
+            this.consumedAt = consumedAt;
+            this.protein = protein;
+            this.fat = fat;
+            this.carbs = carbs;
+            this.totalProtein = totalProtein;
+            this.totalFat = totalFat;
+            this.totalCarbs = totalCarbs;
         }
+
+        public Long getId() { return id; }
+        public String getName() { return name; }
+        public int getCalories() { return calories; }
+        public int getCaloriesPer100g() { return caloriesPer100g; }
+        public int getQuantity() { return quantity; }
+        public int getGrams() { return grams; }
+        public int getTotalCalories() { return totalCalories; }
+        public String getConsumedAt() { return consumedAt; }
+        public double getProtein() { return protein; }
+        public double getFat() { return fat; }
+        public double getCarbs() { return carbs; }
+        public double getTotalProtein() { return totalProtein; }
+        public double getTotalFat() { return totalFat; }
+        public double getTotalCarbs() { return totalCarbs; }
+    }
+
 
         public static class UpdateReq {
             private Integer quantity;

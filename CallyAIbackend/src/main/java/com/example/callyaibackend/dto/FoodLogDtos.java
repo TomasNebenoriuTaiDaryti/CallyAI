@@ -9,6 +9,9 @@ public class FoodLogDtos {
         public int caloriesPer100g;
         public int grams;
         public int quantity;
+        public Double proteinPer100g;
+        public Double fatPer100g;
+        public Double carbsPer100g;
     }
 
     public static class CreateReq {
@@ -25,5 +28,11 @@ public class FoodLogDtos {
         public int grams;
         public int totalCalories;
         public String consumedAt;
+        public double protein;
+        public double fat;
+        public double carbs;
+        public double totalProtein;
+        public double totalFat;
+        public double totalCarbs;
     }
 }

@@ -48,7 +48,10 @@ data class FoodSearchRes(
     val calories: Int,
     val name: String? = null,
     val unit: String? = null,
-    val source: String? = null
+    val source: String? = null,
+    val protein: Double = 0.0,
+    val fat: Double = 0.0,
+    val carbs: Double = 0.0,
 )
 
 data class FoodCartItem(
@@ -61,7 +64,10 @@ data class FoodLogItemReq(
     val name: String,
     val caloriesPer100g: Int,
     val grams: Int,
-    val quantity: Int
+    val quantity: Int,
+    val proteinPer100g: Double,
+    val fatPer100g: Double,
+    val carbsPer100g: Double,
 )
 
 data class FoodLogCreateReq(
@@ -78,7 +84,13 @@ data class FoodLogEntryRes(
     val grams: Int,
     val quantity: Int,
     val totalCalories: Int,
-    val consumedAt: String
+    val consumedAt: String,
+    val protein: Double,
+    val fat: Double,
+    val carbs: Double,
+    val totalProtein: Double,
+    val totalFat: Double,
+    val totalCarbs: Double,
 )
 
 data class FoodLogUpdateReq(

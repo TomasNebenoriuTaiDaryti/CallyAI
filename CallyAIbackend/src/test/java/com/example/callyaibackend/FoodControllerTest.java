@@ -29,7 +29,7 @@ class FoodControllerTest {
 
     @Test
     void searchReturnsFoodResponse() throws Exception {
-        FoodResponse response = new FoodResponse("Apple", 52, "per 100 g", "fallback");
+        FoodResponse response = new FoodResponse("Apple", 52, "per 100 g", "fallback",0.3,0.2,13.8);
         when(foodApiService.search(eq("apple"))).thenReturn(response);
 
         mockMvc.perform(get("/api/food/search")
@@ -39,7 +39,10 @@ class FoodControllerTest {
                 .andExpect(jsonPath("$.name").value("Apple"))
                 .andExpect(jsonPath("$.calories").value(52))
                 .andExpect(jsonPath("$.unit").value("per 100 g"))
-                .andExpect(jsonPath("$.source").value("fallback"));
+                .andExpect(jsonPath("$.source").value("fallback"))
+                .andExpect(jsonPath("$.protein").value(0.3))
+                .andExpect(jsonPath("$.fat").value(0.2))
+                .andExpect(jsonPath("$.carbs").value(13.8));
 
         verify(foodApiService).search("apple");
     }

@@ -14,5 +14,14 @@ data class FoodLogDtos(
     @SerializedName(value = "totalCalories", alternate = ["total_calories"])
     val totalCalories: Int?,
     @SerializedName(value = "consumedAt", alternate = ["consumed_at"])
-    val consumedAt: String
+    val consumedAt: String,
+    val protein: Double,
+    val fat: Double,
+    val carbs: Double,
+    @SerializedName(value = "totalProtein", alternate = ["total_protein"])
+    val totalProtein: Double,
+    @SerializedName(value = "totalFat", alternate = ["total_fat"])
+    val totalFat: Double,
+    @SerializedName(value = "totalCarbs", alternate = ["total_carbs"])
+    val totalCarbs: Double,
 )
