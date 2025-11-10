@@ -19,6 +19,12 @@ interface ApiService {
     @PUT("auth/me")
     suspend fun updateMe(@Header("Authorization") bearer: String, @Body body: UpdateProfileReq): UserMe
 
+    @POST("auth/calories/plan")
+    suspend fun calculateDailyCalories(
+        @Header("Authorization") auth: String,
+        @Body body: CaloriePlanReq
+    ): CaloriePlanResp
+
     @GET("food/search")
     suspend fun searchFood(
         @Header("Authorization") auth: String,

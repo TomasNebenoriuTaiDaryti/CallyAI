@@ -6,7 +6,6 @@ data class RegisterReq(
     val email: String,
     val password: String,
     val confirmPassword: String,
-    val dailyCalories: Int = 2000
 )
 
 data class LoginReq(val email: String, val password: String)
@@ -15,7 +14,10 @@ data class UserMe(
     val id: Long,
     val name: String,
     val email: String,
-    val dailyCalories: Int
+    val dailyCalories: Int?,
+    val units: String? = null,
+    val theme: String? = null,
+    val autoAddAi: Boolean? = null
 )
 
 data class UpdateProfileReq(
@@ -23,6 +25,18 @@ data class UpdateProfileReq(
     val email: String,
     val dailyCalories: Int
 )
+
+data class CaloriePlanReq(
+    val goal: String,
+    val weightKg: Double,
+    val heightCm: Double
+)
+
+data class CaloriePlanResp(
+    val dailyCalories: Int,
+    val advice: String
+)
+
 
 data class AuthResp(
     val token: String,

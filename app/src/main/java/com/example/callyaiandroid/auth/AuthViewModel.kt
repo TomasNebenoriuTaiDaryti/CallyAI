@@ -68,7 +68,6 @@ class AuthViewModel(private val prefs: Prefs) : ViewModel() {
         email: String,
         pass: String,
         confirm: String,
-        kcal: Int
     ) {
         val emailErr =
             if (email.isBlank()) "Laukas privalomas"
@@ -86,7 +85,7 @@ class AuthViewModel(private val prefs: Prefs) : ViewModel() {
             _state.value = _state.value.copy(loading = true, generalError = null)
             try {
                 val resp = RetrofitClient.api.register(
-                    RegisterReq(name, email, pass, confirm, kcal)
+                    RegisterReq(name, email, pass, confirm)
                 )
                 val token = resp.token?.trim()
                 if (token.isNullOrEmpty()) {

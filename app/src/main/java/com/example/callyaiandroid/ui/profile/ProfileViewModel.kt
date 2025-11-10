@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.callyaiandroid.data.Prefs
 import com.example.callyaiandroid.network.RetrofitClient
+import com.example.callyaiandroid.network.dto.CaloriePlanReq
 import com.example.callyaiandroid.network.dto.UpdateProfileReq
 import com.example.callyaiandroid.network.dto.UserMe
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +16,9 @@ import retrofit2.HttpException
 data class ProfileState(
     val loading: Boolean = false,
     val user: UserMe? = null,
-    val message: String? = null
+    val message: String? = null,
+    val calcLoading: Boolean = false,
+    val calcCalories: Int? = null,
 )
 
 class ProfileViewModel(private val prefs: Prefs) : ViewModel() {
@@ -27,7 +30,8 @@ class ProfileViewModel(private val prefs: Prefs) : ViewModel() {
             try {
                 _st.value = _st.value.copy(loading = true, message = null)
                 val me = RetrofitClient.api.me("Bearer $token")
-                _st.value = ProfileState(user = me)
+                val resolved = me.copy(dailyCalories = me.dailyCalories ?: 2000)
+                _st.value = ProfileState(user = resolved)
             } catch (e: Exception) {
                 _st.value = ProfileState(message = "Nepavyko įkelti profilio")
             }
@@ -40,9 +44,10 @@ class ProfileViewModel(private val prefs: Prefs) : ViewModel() {
                 _st.value = _st.value.copy(loading = true, message = null)
                 val updated = RetrofitClient.api.updateMe(
                     "Bearer $token",
-                    UpdateProfileReq(u.name, u.email, u.dailyCalories)
+                    UpdateProfileReq(u.name, u.email, u.dailyCalories ?: 2000)
                 )
-                _st.value = ProfileState(user = updated, message = "Išsaugota")
+                val resolved = updated.copy(dailyCalories = updated.dailyCalories ?: 2000)
+                _st.value = ProfileState(user = resolved, message = "Išsaugota")
             } catch (e: HttpException) {
                 val msg = e.response()?.errorBody()?.string()?.let { json ->
                     try { JSONObject(json).optString("message") } catch (_: Exception) { null }
@@ -50,6 +55,29 @@ class ProfileViewModel(private val prefs: Prefs) : ViewModel() {
                 _st.value = _st.value.copy(loading = false, message = msg)
             } catch (e: Exception) {
                 _st.value = _st.value.copy(loading = false, message = "Nepavyko atnaujinti")
+            }
+        }
+    }
+
+    fun calculateDailyCalories(token: String, goal: String, weight: Double, height: Double) {
+        viewModelScope.launch {
+            try {
+                _st.value = _st.value.copy(calcLoading = true, message = null)
+                val res = RetrofitClient.api.calculateDailyCalories(
+                    "Bearer $token",
+                    CaloriePlanReq(goal, weight, height)
+                )
+                _st.value = _st.value.copy(
+                    calcLoading = false,
+                    calcCalories = res.dailyCalories,
+                )
+            } catch (e: HttpException) {
+                val msg = e.response()?.errorBody()?.string()?.let { json ->
+                    try { JSONObject(json).optString("message") } catch (_: Exception) { null }
+                } ?: "Nepavyko gauti rekomendacijos"
+                _st.value = _st.value.copy(calcLoading = false, message = msg)
+            } catch (_: Exception) {
+                _st.value = _st.value.copy(calcLoading = false, message = "Nepavyko gauti rekomendacijos")
             }
         }
     }
