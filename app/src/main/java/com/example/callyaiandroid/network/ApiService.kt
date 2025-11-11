@@ -6,6 +6,7 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 import retrofit2.http.Header
 import com.example.callyaiandroid.network.dto.FoodSearchRes
+import okhttp3.MultipartBody
 
 interface ApiService {
     @POST("auth/register")
@@ -63,5 +64,11 @@ interface ApiService {
         @Path("id") id: Long
     ): Unit
 
+    @Multipart
+    @POST("food/photo")
+    suspend fun analyzeFoodPhoto(
+        @Header("Authorization") auth: String,
+        @Part image: MultipartBody.Part
+    ): PhotoRecognitionRes
 
 }
