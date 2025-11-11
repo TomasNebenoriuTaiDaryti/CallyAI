@@ -2,7 +2,7 @@ package com.example.callyaiandroid.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.callyaiandroid.data.Prefs
+import com.example.callyaiandroid.data.PrefsGateway
 import com.example.callyaiandroid.network.RetrofitClient
 import com.example.callyaiandroid.network.dto.CaloriePlanReq
 import com.example.callyaiandroid.network.dto.UpdateProfileReq
@@ -21,7 +21,7 @@ data class ProfileState(
     val calcCalories: Int? = null,
 )
 
-class ProfileViewModel(private val prefs: Prefs) : ViewModel() {
+class ProfileViewModel(private val prefs: PrefsGateway) : ViewModel() {
     private val _st = MutableStateFlow(ProfileState())
     val st: StateFlow<ProfileState> = _st
 

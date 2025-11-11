@@ -14,7 +14,7 @@ import retrofit2.HttpException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import com.example.callyaiandroid.data.Prefs
+import com.example.callyaiandroid.data.PrefsGateway
 import org.json.JSONArray
 import java.time.temporal.ChronoUnit
 
@@ -75,7 +75,7 @@ data class SummaryState(
     val carbsTotal: Double get() = periodGroups.sumOf { it.carbsTotal }
 }
 
-class SummaryViewModel(private val prefs: Prefs) : ViewModel() {
+class SummaryViewModel(private val prefs: PrefsGateway) : ViewModel() {
 
     private val _st = MutableStateFlow(SummaryState())
     val st: StateFlow<SummaryState> = _st
