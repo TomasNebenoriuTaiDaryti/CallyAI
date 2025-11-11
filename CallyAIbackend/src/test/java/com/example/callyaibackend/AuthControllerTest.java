@@ -7,15 +7,15 @@ import com.example.callyaibackend.dto.AuthDtos.RegisterReq;
 import com.example.callyaibackend.dto.UpdateProfileReq;
 import com.example.callyaibackend.model.User;
 import com.example.callyaibackend.service.AuthService;
+import com.example.callyaibackend.service.CaloriePlanService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,8 +38,12 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    // Mock ALL constructor deps of AuthController
+    @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private CaloriePlanService caloriePlanService;
 
     private static RegisterReq buildRegisterRequest() {
         RegisterReq req = new RegisterReq();
