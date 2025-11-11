@@ -121,8 +121,47 @@ fun SummaryScreen(
                 Icon(Icons.Filled.ChevronRight, contentDescription = "Kitas laikotarpis")
             }
         }
+        ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = if (st.periodDayCount > 1) "Laikotarpio tikslas" else "Dienos tikslas",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = if (st.periodDayCount > 1) {
+                        "${st.caloriesTotal} / ${st.totalGoal} kcal (${st.dailyGoal} kcal/d.)"
+                    } else {
+                        "${st.caloriesTotal} / ${st.totalGoal} kcal"
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                LinearProgressIndicator(
+                    progress = { st.caloriesProgress.coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (st.caloriesOver > 0) {
+                    Text(
+                        text = "Viršyta ${st.caloriesOver} kcal",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                } else {
+                    Text(
+                        text = "Liko ${st.caloriesRemaining} kcal",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Kalorijos: ${st.caloriesTotal} kcal", style = MaterialTheme.typography.bodyMedium)
             Text(
                 "Baltymai: ${st.proteinTotal.formatAsGrams()} g  Riebalai: ${st.fatTotal.formatAsGrams()} g  Angliavandeniai: ${st.carbsTotal.formatAsGrams()} g",
                 style = MaterialTheme.typography.bodyMedium
@@ -150,7 +189,7 @@ fun SummaryScreen(
                 }
             } else {
                 groups.forEach { group ->
-                    item("header-${group.date}") {
+               /*   item("header-${group.date}") {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
                                 group.date.format(formatter),
@@ -167,6 +206,8 @@ fun SummaryScreen(
                             )
                         }
                     }
+*/
+
 
                     items(
                         items = group.items,

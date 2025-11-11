@@ -7,6 +7,7 @@ import com.example.callyaiandroid.network.dto.FoodLogDtos
 import com.example.callyaiandroid.network.dto.FoodLogUpdateReq
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
@@ -15,6 +16,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import com.example.callyaiandroid.data.Prefs
 import org.json.JSONArray
+import java.time.temporal.ChronoUnit
 
 data class FoodLogItem(
     val id: Long,
@@ -51,13 +53,25 @@ data class SummaryState(
     val periodType: SummaryPeriodType = SummaryPeriodType.DAY,
     val periodStart: LocalDate = LocalDate.now(),
     val periodEnd: LocalDate = LocalDate.now(),
-    val deletingItemId: Long? = null
+    val deletingItemId: Long? = null,
+    val dailyGoal: Int = 2000
+
 ) {
     val periodGroups: List<DayGroup>
         get() = groups.filter { !it.date.isBefore(periodStart) && !it.date.isAfter(periodEnd) }
     val caloriesTotal: Int get() = periodGroups.sumOf { it.dayTotal }
     val proteinTotal: Double get() = periodGroups.sumOf { it.proteinTotal }
     val fatTotal: Double get() = periodGroups.sumOf { it.fatTotal }
+    val periodDayCount: Int
+        get() {
+            val days = ChronoUnit.DAYS.between(periodStart, periodEnd)
+            return (if (days < 0) 0 else days.toInt()) + 1
+        }
+    val totalGoal: Int get() = dailyGoal * periodDayCount
+    val caloriesRemaining: Int get() = (totalGoal - caloriesTotal).coerceAtLeast(0)
+    val caloriesOver: Int get() = (caloriesTotal - totalGoal).coerceAtLeast(0)
+    val caloriesProgress: Float
+        get() = if (totalGoal <= 0) 0f else caloriesTotal.toFloat() / totalGoal.toFloat()
     val carbsTotal: Double get() = periodGroups.sumOf { it.carbsTotal }
 }
 
@@ -74,16 +88,25 @@ class SummaryViewModel(private val prefs: Prefs) : ViewModel() {
 
     init {
         viewModelScope.launch {
-            prefs.summaryCacheFlow.collect { cached ->
-                if (cached.isNullOrBlank()) return@collect
-                val groups = parseCachedGroups(cached)
-                if (groups.isEmpty()) return@collect
-                val firstDate = groups.first().date
-                _st.value = _st.value.copy(
-                    groups = groups,
-                    periodStart = firstDate,
-                    periodEnd = firstDate
-                )
+            launch {
+                prefs.summaryCacheFlow.collect { cached ->
+                    if (cached.isNullOrBlank()) return@collect
+                    val groups = parseCachedGroups(cached)
+                    if (groups.isEmpty()) return@collect
+                    val firstDate = groups.first().date
+                    _st.value = _st.value.copy(
+                        groups = groups,
+                        periodStart = firstDate,
+                        periodEnd = firstDate
+                    )
+                }
+            }
+            launch {
+                prefs.kcalFlow.collect { kcal ->
+                    if (kcal > 0) {
+                        _st.value = _st.value.copy(dailyGoal = kcal)
+                    }
+                }
             }
         }
     }
