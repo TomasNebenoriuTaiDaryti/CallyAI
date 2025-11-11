@@ -72,13 +72,20 @@ class ProfileViewModel(private val prefs: Prefs) : ViewModel() {
         }
     }
 
-    fun calculateDailyCalories(token: String, goal: String, weight: Double, height: Double) {
+    fun calculateDailyCalories(
+        token: String,
+        goal: String,
+        weight: Double,
+        height: Double,
+        gender: String,
+        activityLevel: String
+    ) {
         viewModelScope.launch {
             try {
                 _st.value = _st.value.copy(calcLoading = true, message = null)
                 val res = RetrofitClient.api.calculateDailyCalories(
                     "Bearer $token",
-                    CaloriePlanReq(goal, weight, height)
+                    CaloriePlanReq(goal, weight, height, gender, activityLevel)
                 )
                 _st.value = _st.value.copy(
                     calcLoading = false,

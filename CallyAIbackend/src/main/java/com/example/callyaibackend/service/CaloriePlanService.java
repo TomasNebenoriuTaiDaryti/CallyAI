@@ -53,6 +53,8 @@ public class CaloriePlanService {
                     "Goal: " + req.getGoal().toLowerCase() + ". " +
                             "Weight: " + req.getWeightKg() + " kg. " +
                             "Height: " + req.getHeightCm() + " cm. " +
+                            "Gender: " + req.getGender().toLowerCase() + ". " +
+                            "Activity level: " + req.getActivityLevel().toLowerCase() + ". " +
                             "Suggest recommended daily calories for an adult with the given goal.");
             msgs.add(user);
 
@@ -89,14 +91,32 @@ public class CaloriePlanService {
     }
 
     private CaloriePlanResponse fallback(CaloriePlanRequest req) {
-        double base = req.getWeightKg() * 30.0;
-        String goal = req.getGoal().toLowerCase();
-        if (goal.contains("lose")) {
-            base -= 300.0;
-        } else if (goal.contains("gain")) {
-            base += 300.0;
+        final double assumedAge = 30.0; // approximate age when not provided by the client
+        double bmr = 10.0 * req.getWeightKg() + 6.25 * req.getHeightCm() - 5.0 * assumedAge;
+        if ("male".equalsIgnoreCase(req.getGender())) {
+            bmr += 5.0;
+        } else {
+            bmr -= 161.0;
         }
-        int calories = (int) Math.max(1200, Math.round(base));
+
+        double multiplier = switch (req.getActivityLevel().toLowerCase()) {
+            case "moderate" -> 1.375;
+            case "active" -> 1.55;
+            case "very_active" -> 1.725;
+            default -> 1.2;
+        };
+
+        double maintenance = bmr * multiplier;
+        String goal = req.getGoal().toLowerCase();
+        double adjustment = 0.0;
+        if (goal.contains("lose")) {
+            adjustment = -400.0;
+        } else if (goal.contains("gain")) {
+            adjustment = 350.0;
+        }
+
+        double estimated = maintenance + adjustment;
+        int calories = (int) Math.max(1200, Math.min(4500, Math.round(estimated)));
         return new CaloriePlanResponse(calories);
     }
 }

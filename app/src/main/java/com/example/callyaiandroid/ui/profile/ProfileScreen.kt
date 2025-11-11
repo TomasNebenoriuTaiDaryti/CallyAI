@@ -57,6 +57,8 @@ fun ProfileScreen(
     var email by remember(user) { mutableStateOf(user.email) }
     var kcal by remember(user) { mutableStateOf((user.dailyCalories ?: 2000).toString()) }
     var goal by remember(user) { mutableStateOf("maintain") }
+    var gender by remember(user) { mutableStateOf("female") }
+    var activityLevel by remember(user) { mutableStateOf("none") }
     var weightInput by remember(user) { mutableStateOf("") }
     var heightInput by remember(user) { mutableStateOf("") }
 
@@ -201,6 +203,59 @@ fun ProfileScreen(
                     }
                 }
 
+                Text(
+                    "Lytis",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                val genderOptions = listOf(
+                    "female" to "Moteris",
+                    "male" to "Vyras"
+                )
+
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    genderOptions.forEach { (value, label) ->
+                        FilterChip(
+                            selected = gender == value,
+                            onClick = { gender = value },
+                            label = { Text(label) },
+                            leadingIcon = if (gender == value) {
+                                { Icon(Icons.Filled.Check, contentDescription = null) }
+                            } else null
+                        )
+                    }
+                }
+
+                Text(
+                    "Aktyvumo lygis",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                val activityOptions = listOf(
+                    "none" to "Be sporto",
+                    "moderate" to "Vidutinis aktyvumas (1-2 k./sav.)",
+                    "active" to "Aktyvus sportas (3-5 k./sav.)",
+                    "very_active" to "Labai aktyvus (6+ k./sav.)"
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    activityOptions.forEach { (value, label) ->
+                        FilterChip(
+                            selected = activityLevel == value,
+                            onClick = { activityLevel = value },
+                            label = { Text(label) },
+                            leadingIcon = if (activityLevel == value) {
+                                { Icon(Icons.Filled.Check, contentDescription = null) }
+                            } else null
+                        )
+                    }
+                }
+
                 OutlinedTextField(
                     value = weightInput,
                     onValueChange = { raw ->
@@ -241,7 +296,7 @@ fun ProfileScreen(
                             showSnack("Įveskite teisingą ūgį")
                             return@Button
                         }
-                        vm.calculateDailyCalories(token, goal, weight, height)
+                        vm.calculateDailyCalories(token, goal, weight, height, gender, activityLevel)
                     },
                     enabled = !st.calcLoading,
                     modifier = Modifier.fillMaxWidth()

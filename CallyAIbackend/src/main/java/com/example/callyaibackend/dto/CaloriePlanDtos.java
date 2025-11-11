@@ -20,6 +20,17 @@ public class CaloriePlanDtos {
         @DecimalMin(value = "120.0", message = "Per mažas ūgis")
         @DecimalMax(value = "250.0", message = "Per didelis ūgis")
         private Double heightCm;
+
+        @NotBlank(message = "Pasirinkite lytį")
+        @Pattern(regexp = "(?i)(male|female)", message = "Netinkama lytis")
+        private String gender;
+
+        @NotBlank(message = "Pasirinkite aktyvumą")
+        @Pattern(
+                regexp = "(?i)(none|moderate|active|very_active)",
+                message = "Netinkamas aktyvumo lygis"
+        )
+        private String activityLevel;
     }
 
     @Getter

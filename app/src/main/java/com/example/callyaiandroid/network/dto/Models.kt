@@ -29,7 +29,9 @@ data class UpdateProfileReq(
 data class CaloriePlanReq(
     val goal: String,
     val weightKg: Double,
-    val heightCm: Double
+    val heightCm: Double,
+    val gender: String,
+    val activityLevel: String
 )
 
 data class CaloriePlanResp(
