@@ -71,11 +71,25 @@ fun SummaryScreen(
         rangePickerState.setSelection(st.periodStart.toEpochMilli(), st.periodEnd.toEpochMilli())
     }
 
+    var showAnalysis by remember { mutableStateOf(false) }
+
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp).navigationBarsPadding(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Suvestinė", style = MaterialTheme.typography.titleLarge)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Suvestinė", style = MaterialTheme.typography.titleLarge)
+            OutlinedButton(onClick = { showAnalysis = true }) {
+                Text("Analizė")
+            }
+        }
 
         SingleChoiceSegmentedButtonRow {
             SummaryPeriodType.values().forEachIndexed { index, type ->
@@ -378,6 +392,13 @@ fun SummaryScreen(
         ) {
             DateRangePicker(state = rangePickerState)
         }
+    }
+
+    if (showAnalysis) {
+        SummaryAnalysisDialog(
+            groups = st.groups,
+            onDismiss = { showAnalysis = false }
+        )
     }
 }
 
