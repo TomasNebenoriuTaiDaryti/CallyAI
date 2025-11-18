@@ -3,7 +3,7 @@ package com.example.callyaiandroid.auth
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.callyaiandroid.data.Prefs
+import com.example.callyaiandroid.data.PrefsGateway
 import com.example.callyaiandroid.network.RetrofitClient
 import com.example.callyaiandroid.network.dto.LoginReq
 import com.example.callyaiandroid.network.dto.RegisterReq
@@ -22,7 +22,7 @@ data class AuthUiState(
     val infoMessage: String? = null
 )
 
-class AuthViewModel(private val prefs: Prefs) : ViewModel() {
+class AuthViewModel(private val prefs: PrefsGateway) : ViewModel() {
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state
 

@@ -203,7 +203,7 @@ fun SummaryScreen(
                 }
             } else {
                 groups.forEach { group ->
-               /*   item("header-${group.date}") {
+                 item("header-${group.date}") {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
                                 group.date.format(formatter),
@@ -220,7 +220,7 @@ fun SummaryScreen(
                             )
                         }
                     }
-*/
+
 
 
                     items(

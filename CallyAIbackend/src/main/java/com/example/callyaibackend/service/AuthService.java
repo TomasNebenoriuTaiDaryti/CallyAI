@@ -49,7 +49,7 @@ public class AuthService {
     }
 
     public void logout(String token){ tokens.deleteByToken(token); }
-    
+
     public void createPasswordReset(String email) {
         users.findByEmail(email).ifPresent(user -> {
             resetTokens.deleteAllByUser(user);
