@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
 
             val token by prefs.tokenFlow.collectAsState(initial = null)
             var loggedIn by remember { mutableStateOf(false) }
-            LaunchedEffect(token) { loggedIn = !token.isNullOrBlank() }
+          LaunchedEffect(token) { loggedIn = !token.isNullOrBlank() }
 
             var authScreen by remember { mutableStateOf("login") }
 
