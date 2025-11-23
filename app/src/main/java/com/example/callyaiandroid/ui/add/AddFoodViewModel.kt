@@ -18,6 +18,11 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 import kotlin.math.pow
 import kotlin.math.round
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import kotlinx.coroutines.CancellationException
+import kotlin.math.roundToInt
 data class CartItem(
     val name: String,
     val caloriesPer100g: Int,
@@ -135,10 +140,51 @@ class AddFoodViewModel : ViewModel() {
         _st.value = _st.value.copy(mode = mode)
     }
 
-    fun startPhotoCapture() {
+    /*fun startPhotoCapture() {
         _st.value = _st.value.copy(photoInProgress = true, message = null)
         // This is a placeholder for future camera integration
         _st.value = _st.value.copy(photoInProgress = false, message = "Fotografavimo funkcija dar ruošiama")
+    }*/
+    fun analyzePhoto(token: String, imageBytes: ByteArray) {
+        if (imageBytes.isEmpty()) {
+            _st.value = _st.value.copy(message = "Nepavyko nuskaityti nuotraukos")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                _st.value = _st.value.copy(photoInProgress = true, message = null)
+
+                val requestBody = imageBytes.toRequestBody("image/jpeg".toMediaType())
+                val part = MultipartBody.Part.createFormData("image", "food.jpg", requestBody)
+                val response = RetrofitClient.api.analyzeFoodPhoto("Bearer $token", part)
+                val items = response.items
+                if (items.isEmpty()) {
+                    _st.value = _st.value.copy(
+                        photoDraft = emptyList(),
+                        photoInProgress = false,
+                        message = "Nepavyko atpažinti maisto nuotraukoje"
+                    )
+                } else {
+                    val cartItems = items.map { it.toCartItem() }
+                    _st.value = _st.value.copy(
+                        photoDraft = cartItems,
+                        photoInProgress = false,
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: HttpException) {
+                val msg = e.response()?.errorBody()?.string()?.let { json ->
+                    try { JSONObject(json).optString("message") } catch (_: Exception) { null }
+                }
+                val display = msg?.takeIf { it.isNotBlank() } ?: "Nepavyko apdoroti nuotraukos"
+                _st.value = _st.value.copy(photoInProgress = false, message = display)
+            } catch (e: Exception) {
+                val msg = e.message?.takeIf { it.isNotBlank() } ?: "Nepavyko apdoroti nuotraukos"
+                _st.value = _st.value.copy(photoInProgress = false, message = msg)
+            }
+        }
     }
 
     fun setPhotoDraft(items: List<CartItem>) {
@@ -188,6 +234,10 @@ class AddFoodViewModel : ViewModel() {
             }
             _st.value = _st.value.copy(photoDraft = list)
         }
+    }
+
+    fun onPhotoError(message: String) {
+        _st.value = _st.value.copy(message = message, photoInProgress = false)
     }
 
     fun remove(index: Int) {
@@ -252,4 +302,17 @@ private fun Double.roundTo(decimals: Int): Double {
     if (decimals <= 0) return round(this)
     val factor = 10.0.pow(decimals)
     return round(this * factor) / factor
+}
+
+private fun FoodSearchRes.toCartItem(): CartItem {
+    return CartItem(
+        name = (name ?: "Maistas").ifBlank { "Maistas" },
+        caloriesPer100g = calories.coerceAtLeast(0),
+        grams = 100,
+        qty = 1,
+        unit = unit ?: "per 100 g",
+        proteinPer100g = protein.coerceAtLeast(0.0),
+        fatPer100g = fat.coerceAtLeast(0.0),
+        carbsPer100g = carbs.coerceAtLeast(0.0)
+    )
 }

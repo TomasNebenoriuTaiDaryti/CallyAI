@@ -56,6 +56,10 @@ data class FoodSearchRes(
     val carbs: Double = 0.0,
 )
 
+data class PhotoRecognitionRes(
+    val items: List<FoodSearchRes> = emptyList()
+)
+
 data class FoodCartItem(
     val name: String,
     val calories: Int,

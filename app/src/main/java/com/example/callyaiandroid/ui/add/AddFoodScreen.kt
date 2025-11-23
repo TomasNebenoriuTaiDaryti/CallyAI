@@ -1,6 +1,43 @@
 package com.example.callyaiandroid.ui.add
 
 import androidx.compose.foundation.layout.*
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.example.callyaiandroid.ui.add.AddFoodMode.CAMERA
+import com.example.callyaiandroid.ui.add.AddFoodMode.MANUAL
+import java.io.ByteArrayOutputStream
+import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,7 +58,6 @@ import com.example.callyaiandroid.ui.add.AddFoodMode.CAMERA
 import com.example.callyaiandroid.ui.add.AddFoodMode.MANUAL
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,7 +114,9 @@ fun AddFoodScreen(
 
             CAMERA -> CameraEntrySection(
                 state = st,
-                onStartCapture = vm::startPhotoCapture,
+                //onStartCapture = vm::startPhotoCapture,
+                onImageCaptured = { vm.analyzePhoto(token, it) },
+                onPhotoError = vm::onPhotoError,
                 onSetGrams = vm::setPhotoDraftGrams,
                 onIncQty = vm::incPhotoDraftQty,
                 onDecQty = vm::decPhotoDraftQty,
@@ -236,21 +274,93 @@ private fun ManualEntrySection(
 @Composable
 private fun CameraEntrySection(
     state: AddFoodState,
-    onStartCapture: () -> Unit,
+    //onStartCapture: () -> Unit,
+    onImageCaptured: (ByteArray) -> Unit,
+    onPhotoError: (String) -> Unit,
     onSetGrams: (Int, String) -> Unit,
     onIncQty: (Int) -> Unit,
     onDecQty: (Int) -> Unit,
     onDiscard: () -> Unit,
     onImport: () -> Unit,
 ) {
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    val takePhotoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        if (bitmap != null) {
+            scope.launch {
+                val bytes = withContext(Dispatchers.IO) { bitmap.prepareForUpload().toJpegByteArray() }
+                if (bytes != null && bytes.isNotEmpty()) {
+                    onImageCaptured(bytes)
+                } else {
+                    onPhotoError("Nepavyko apdoroti nuotraukos")
+                }
+            }
+        } else if (!state.photoInProgress) {
+            onPhotoError("Nuotrauka nebuvo padaryta")
+        }
+    }
+
+    val pickPhotoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                val bytes = withContext(Dispatchers.IO) { uri.toCompressedBytes(context) }
+                if (bytes != null && bytes.isNotEmpty()) {
+                    onImageCaptured(bytes)
+                } else {
+                    onPhotoError("Nepavyko nuskaityti nuotraukos")
+                }
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            pendingAction?.invoke()
+        } else {
+            onPhotoError("Kameros leidimas atmestas")
+        }
+        pendingAction = null
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             "Nufotografuokite produktą ir sistema atpažins maistą. Prieš įkeldami galėsite pakoreguoti duomenis.",
             style = MaterialTheme.typography.bodyMedium
         )
 
-        Button(onClick = onStartCapture, enabled = !state.photoInProgress) {
+        /*Button(onClick = onStartCapture, enabled = !state.photoInProgress) {
             Text(if (state.photoInProgress) "Apdorojama..." else "Fotografuoti")
+        }*/
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = {
+                    if (state.photoInProgress) return@Button
+                    val permission = Manifest.permission.CAMERA
+                    if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+                        takePhotoLauncher.launch(null)
+                    } else {
+                        pendingAction = { takePhotoLauncher.launch(null) }
+                        permissionLauncher.launch(permission)
+                    }
+                },
+                enabled = !state.photoInProgress
+            ) {
+                Text(if (state.photoInProgress) "Apdorojama..." else "Nufotografuoti")
+            }
+
+            OutlinedButton(
+                onClick = {
+                    if (state.photoInProgress) return@OutlinedButton
+                    pickPhotoLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+                enabled = !state.photoInProgress
+            ) {
+                Text("Pasirinkti nuotrauką")
+            }
         }
 
         if (state.photoInProgress) {
@@ -288,6 +398,28 @@ private fun CameraEntrySection(
     }
 }
 
+private fun Bitmap.prepareForUpload(maxDimension: Int = 1024): Bitmap {
+    val maxSide = maxOf(width, height)
+    if (maxSide <= maxDimension) return this
+    val scale = maxDimension.toFloat() / maxSide.toFloat()
+    val targetWidth = (width * scale).roundToInt().coerceAtLeast(1)
+    val targetHeight = (height * scale).roundToInt().coerceAtLeast(1)
+    return Bitmap.createScaledBitmap(this, targetWidth, targetHeight, true)
+}
+
+private fun Bitmap.toJpegByteArray(): ByteArray? {
+    return ByteArrayOutputStream().use { stream ->
+        if (!compress(Bitmap.CompressFormat.JPEG, 90, stream)) return null
+        stream.toByteArray()
+    }
+}
+
+private fun Uri.toCompressedBytes(context: android.content.Context): ByteArray? {
+    return context.contentResolver.openInputStream(this)?.use { input ->
+        val original = BitmapFactory.decodeStream(input) ?: return null
+        original.prepareForUpload().toJpegByteArray()
+    }
+}
 @Composable
 private fun CartItemRow(
     item: CartItem,
