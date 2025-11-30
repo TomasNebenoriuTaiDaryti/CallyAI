@@ -23,6 +23,7 @@ import com.example.callyaiandroid.ui.auth.RegisterScreen
 import com.example.callyaiandroid.ui.profile.ProfileScreen
 import com.example.callyaiandroid.ui.profile.ProfileViewModel
 import com.example.callyaiandroid.ui.theme.AppTheme
+import com.example.callyaiandroid.notifications.CalorieNotificationScheduler
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -46,8 +47,12 @@ class MainActivity : ComponentActivity() {
                 scope.launch { prefs.setTheme(if (wantDark) "dark" else "light") }
             }
 
+            val notificationsEnabled by prefs.notificationsEnabledFlow.collectAsState(initial = false)
+            val notificationIntervalHours by prefs.notificationIntervalHoursFlow.collectAsState(initial = 3)
+
             val token by prefs.tokenFlow.collectAsState(initial = null)
             var loggedIn by remember { mutableStateOf(false) }
+            LaunchedEffect(token) { loggedIn = !token.isNullOrBlank() }
           LaunchedEffect(token) { loggedIn = !token.isNullOrBlank() }
 
             var authScreen by remember { mutableStateOf("login") }
@@ -56,6 +61,14 @@ class MainActivity : ComponentActivity() {
                 if (!token.isNullOrBlank()) {
                     if (authScreen == "register") showSnack("Paskyra sukurta")
                     else showSnack("Sėkmingai prisijungta")
+                }
+            }
+
+            LaunchedEffect(loggedIn, notificationsEnabled, notificationIntervalHours) {
+                if (loggedIn && notificationsEnabled && CalorieNotificationScheduler.hasPermission(this@MainActivity)) {
+                    CalorieNotificationScheduler.schedule(this@MainActivity, notificationIntervalHours)
+                } else if (!notificationsEnabled) {
+                    CalorieNotificationScheduler.cancel(this@MainActivity)
                 }
             }
 

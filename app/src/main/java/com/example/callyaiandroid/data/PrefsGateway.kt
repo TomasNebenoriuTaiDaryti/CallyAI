@@ -18,4 +18,10 @@ interface PrefsGateway {
 
     val summaryCacheFlow: Flow<String?>
     suspend fun saveSummaryCache(json: String)
+
+    val notificationsEnabledFlow: Flow<Boolean>
+    suspend fun setNotificationsEnabled(enabled: Boolean)
+
+    val notificationIntervalHoursFlow: Flow<Int>
+    suspend fun setNotificationIntervalHours(hours: Int)
 }

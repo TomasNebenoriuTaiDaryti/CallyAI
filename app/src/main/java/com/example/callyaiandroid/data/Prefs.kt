@@ -8,6 +8,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.map
 import com.example.callyaiandroid.network.dto.UserMe
 import org.json.JSONObject
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import kotlin.math.max
 
 val Context.dataStore by preferencesDataStore("prefs")
 object Keys {
@@ -16,6 +18,8 @@ object Keys {
     val dailyKcal = intPreferencesKey("daily_kcal")
     val profileCache = stringPreferencesKey("profile_cache")
     val summaryCache = stringPreferencesKey("summary_cache")
+    val notificationsEnabled = booleanPreferencesKey("notifications_enabled")
+    val notificationIntervalHours = intPreferencesKey("notification_interval_hours")
 }
 class Prefs(private val ctx: Context) : PrefsGateway {
     override val tokenFlow = ctx.dataStore.data.map { prefs ->
@@ -70,5 +74,14 @@ class Prefs(private val ctx: Context) : PrefsGateway {
     override val summaryCacheFlow = ctx.dataStore.data.map { it[Keys.summaryCache] }
     override suspend fun saveSummaryCache(json: String) {
         ctx.dataStore.edit { it[Keys.summaryCache] = json }
+    }
+    override val notificationsEnabledFlow = ctx.dataStore.data.map { it[Keys.notificationsEnabled] ?: false }
+    override suspend fun setNotificationsEnabled(enabled: Boolean) {
+        ctx.dataStore.edit { it[Keys.notificationsEnabled] = enabled }
+    }
+
+    override val notificationIntervalHoursFlow = ctx.dataStore.data.map { it[Keys.notificationIntervalHours] ?: 3 }
+    override suspend fun setNotificationIntervalHours(hours: Int) {
+        ctx.dataStore.edit { it[Keys.notificationIntervalHours] = max(1, hours) }
     }
 }

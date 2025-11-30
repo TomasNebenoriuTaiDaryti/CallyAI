@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">CallyAIAndroid</string>
+    <string name="calorie_channel_name">Kalorijų priminimai</string>
+    <string name="calorie_channel_description">Primena, kiek kalorijų liko suvalgyti iki dienos tikslo.</string>
+    <string name="calorie_notification_title">Dienos kalorijų priminimas</string>
+    <string name="calorie_notification_body">Likę %1$d kcal šiandien.</string>
 </resources>

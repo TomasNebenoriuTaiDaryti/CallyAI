@@ -1,5 +1,9 @@
 package com.example.callyaiandroid.ui.profile
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -16,16 +20,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.callyaiandroid.data.Prefs
+import com.example.callyaiandroid.notifications.CalorieNotificationScheduler
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.rememberUpdatedState
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     vm: ProfileViewModel,
@@ -37,7 +48,40 @@ fun ProfileScreen(
     val st by vm.st.collectAsState()
     val theme by prefs.themeFlow.collectAsState(initial = "light")
     val dark = theme == "dark"
+    val notificationsEnabled by prefs.notificationsEnabledFlow.collectAsState(initial = false)
+    val notificationIntervalHours by prefs.notificationIntervalHoursFlow.collectAsState(initial = 3)
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    var hasNotificationPermission by remember { mutableStateOf(CalorieNotificationScheduler.hasPermission(context)) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasNotificationPermission = CalorieNotificationScheduler.hasPermission(context)
+        scope.launch {
+            if (granted) {
+                prefs.setNotificationsEnabled(true)
+                CalorieNotificationScheduler.schedule(context, notificationIntervalHours)
+                showSnack("Kalorijų priminimai įjungti")
+            } else {
+                prefs.setNotificationsEnabled(false)
+                showSnack("Priminimams reikia leisti pranešimus")
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        hasNotificationPermission = CalorieNotificationScheduler.hasPermission(context)
+    }
+
+    val latestInterval by rememberUpdatedState(notificationIntervalHours)
+
+    LaunchedEffect(notificationsEnabled, hasNotificationPermission, latestInterval) {
+        if (notificationsEnabled && hasNotificationPermission) {
+            CalorieNotificationScheduler.schedule(context, latestInterval)
+        }
+    }
 
     LaunchedEffect(token) { vm.load(token) }
 
@@ -73,6 +117,8 @@ fun ProfileScreen(
     }
 
     val scrollState = rememberScrollState()
+    val notificationOn = notificationsEnabled && hasNotificationPermission
+    val frequencyOptions = listOf(1, 3, 6, 12, 24)
 
     Column(
         Modifier.fillMaxSize().verticalScroll(scrollState).padding(horizontal = 16.dp, vertical = 8.dp).navigationBarsPadding().imePadding(),
@@ -145,6 +191,69 @@ fun ProfileScreen(
                         })
                     }
                 )
+                Divider()
+                ListItem(
+                    headlineContent = { Text("Kalorijų priminimai") },
+                    supportingContent = { Text(if (notificationOn) "Įjungta" else "Išjungta") },
+                    trailingContent = {
+                        Switch(
+                            checked = notificationOn,
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    if (CalorieNotificationScheduler.hasPermission(context)) {
+                                        hasNotificationPermission = true
+                                        scope.launch { prefs.setNotificationsEnabled(true) }
+                                        CalorieNotificationScheduler.schedule(context, notificationIntervalHours)
+                                        showSnack("Kalorijų priminimai įjungti")
+                                    } else {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        } else {
+                                            hasNotificationPermission = true
+                                            scope.launch { prefs.setNotificationsEnabled(true) }
+                                            CalorieNotificationScheduler.schedule(context, notificationIntervalHours)
+                                            showSnack("Kalorijų priminimai įjungti")
+                                        }
+                                    }
+                                } else {
+                                    scope.launch { prefs.setNotificationsEnabled(false) }
+                                    CalorieNotificationScheduler.cancel(context)
+                                    showSnack("Kalorijų priminimai išjungti")
+                                }
+                            }
+                        )
+                    }
+                )
+                Divider()
+                var expanded by remember { mutableStateOf(false) }
+                val selectedLabel = if (notificationIntervalHours == 1) "Kas valandą" else "Kas ${notificationIntervalHours} val."
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it }
+                ) {
+                    ListItem(
+                        modifier = Modifier.menuAnchor(),
+                        headlineContent = { Text("Priminimų dažnis") },
+                        supportingContent = { Text(selectedLabel) },
+                        trailingContent = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        overlineContent = { Text("Pranešimai siunčiami tik iki kol pasiekiamas dienos tikslas") }
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        frequencyOptions.forEach { hours ->
+                            DropdownMenuItem(
+                                text = { Text(if (hours == 1) "Kas valandą" else "Kas $hours val.") },
+                                onClick = {
+                                    expanded = false
+                                    scope.launch { prefs.setNotificationIntervalHours(hours) }
+                                    if (notificationOn) {
+                                        CalorieNotificationScheduler.schedule(context, hours)
+                                        showSnack("Dažnis atnaujintas")
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
                 Divider()
                 ListItem(
                     headlineContent = { Text("Dienos tikslas (kcal)") },
