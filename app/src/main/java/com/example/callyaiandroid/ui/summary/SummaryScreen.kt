@@ -21,6 +21,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SummaryScreen(
@@ -53,6 +54,7 @@ fun SummaryScreen(
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showRangePicker by remember { mutableStateOf(false) }
+    var showFilters by remember { mutableStateOf(false) }
 
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = st.periodStart.toEpochMilli()
@@ -135,6 +137,37 @@ fun SummaryScreen(
                 Icon(Icons.Filled.ChevronRight, contentDescription = "Kitas laikotarpis")
             }
         }
+        OutlinedButton(onClick = { showFilters = !showFilters }, modifier = Modifier.fillMaxWidth()) {
+            Text(if (showFilters) "Slėpti filtrus" else "Filtrai")
+        }
+        if (showFilters) {
+            OutlinedTextField(
+                value = st.searchQuery,
+                onValueChange = { vm.updateSearchQuery(it) },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Paieška pagal pavadinimą") },
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) }
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Kalorijų rikiavimas", style = MaterialTheme.typography.titleSmall)
+                SingleChoiceSegmentedButtonRow {
+                    listOf(
+                        CalorieSortOrder.NONE to "Išjungtas rikiavimas",
+                        CalorieSortOrder.ASCENDING to "Nuo didžiausio", //backwards
+                        CalorieSortOrder.DESCENDING to "Nuo mažiausio" //backwards
+                    ).forEachIndexed { index, (order, label) ->
+                        SegmentedButton(
+                            selected = st.calorieSort == order,
+                            onClick = { vm.setCalorieSort(order) },
+                            shape = SegmentedButtonDefaults.itemShape(index, 3)
+                        ) {
+                            Text(label)
+                        }
+                    }
+                }
+            }
+        }
         ElevatedCard(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier
@@ -182,7 +215,7 @@ fun SummaryScreen(
             )
         }
 
-        val groups = remember(st.periodGroups) { st.periodGroups.sortedByDescending { it.date } }
+        val groups = remember(st.filteredGroups) { st.filteredGroups.sortedByDescending { it.date } }
 
         LazyColumn(
             state = listState,

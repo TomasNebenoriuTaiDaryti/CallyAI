@@ -44,6 +44,7 @@ data class DayGroup(
     val carbsTotal: Double
 )
 enum class SummaryPeriodType { DAY, WEEK, MONTH }
+enum class CalorieSortOrder { NONE, ASCENDING, DESCENDING }
 data class SummaryState(
     val loading: Boolean = false,
     val error: String? = null,
@@ -54,11 +55,40 @@ data class SummaryState(
     val periodStart: LocalDate = LocalDate.now(),
     val periodEnd: LocalDate = LocalDate.now(),
     val deletingItemId: Long? = null,
-    val dailyGoal: Int = 2000
-
+    val dailyGoal: Int = 2000,
+    val searchQuery: String = "",
+    val calorieSort: CalorieSortOrder = CalorieSortOrder.NONE
 ) {
     val periodGroups: List<DayGroup>
         get() = groups.filter { !it.date.isBefore(periodStart) && !it.date.isAfter(periodEnd) }
+    val filteredGroups: List<DayGroup>
+        get() {
+            val query = searchQuery.trim().lowercase()
+
+            return periodGroups.mapNotNull { group ->
+                var filteredItems = group.items
+
+                if (query.isNotEmpty()) {
+                    filteredItems = filteredItems.filter { it.name.lowercase().contains(query) }
+                }
+
+                filteredItems = when (calorieSort) {
+                    CalorieSortOrder.NONE -> filteredItems
+                    CalorieSortOrder.ASCENDING -> filteredItems.sortedBy { it.totalCalories }
+                    CalorieSortOrder.DESCENDING -> filteredItems.sortedByDescending { it.totalCalories }
+                }
+
+                if (filteredItems.isEmpty()) return@mapNotNull null
+
+                group.copy(
+                    items = filteredItems,
+                    dayTotal = filteredItems.sumOf { it.totalCalories },
+                    proteinTotal = filteredItems.sumOf { it.totalProtein },
+                    fatTotal = filteredItems.sumOf { it.totalFat },
+                    carbsTotal = filteredItems.sumOf { it.totalCarbs }
+                )
+            }
+        }
     val caloriesTotal: Int get() = periodGroups.sumOf { it.dayTotal }
     val proteinTotal: Double get() = periodGroups.sumOf { it.proteinTotal }
     val fatTotal: Double get() = periodGroups.sumOf { it.fatTotal }
@@ -237,6 +267,14 @@ class SummaryViewModel(private val prefs: PrefsGateway) : ViewModel() {
     fun selectPeriod(start: LocalDate, end: LocalDate) {
         val normalizedEnd = if (end.isBefore(start)) start else end
         _st.value = _st.value.copy(periodStart = start, periodEnd = normalizedEnd)
+    }
+
+    fun updateSearchQuery(query: String) {
+        _st.value = _st.value.copy(searchQuery = query)
+    }
+
+    fun setCalorieSort(order: CalorieSortOrder) {
+        _st.value = _st.value.copy(calorieSort = order)
     }
 
     fun clearMessage() {
