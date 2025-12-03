@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter
 import com.example.callyaiandroid.data.PrefsGateway
 import org.json.JSONArray
 import java.time.temporal.ChronoUnit
+import com.example.callyaiandroid.data.MacroPercents
 
 data class FoodLogItem(
     val id: Long,
@@ -57,7 +58,8 @@ data class SummaryState(
     val deletingItemId: Long? = null,
     val dailyGoal: Int = 2000,
     val searchQuery: String = "",
-    val calorieSort: CalorieSortOrder = CalorieSortOrder.NONE
+    val calorieSort: CalorieSortOrder = CalorieSortOrder.NONE,
+    val macroPercents: MacroPercents = MacroPercents()
 ) {
     val periodGroups: List<DayGroup>
         get() = groups.filter { !it.date.isBefore(periodStart) && !it.date.isAfter(periodEnd) }
@@ -103,6 +105,28 @@ data class SummaryState(
     val caloriesProgress: Float
         get() = if (totalGoal <= 0) 0f else caloriesTotal.toFloat() / totalGoal.toFloat()
     val carbsTotal: Double get() = periodGroups.sumOf { it.carbsTotal }
+
+    private fun macroProgress(total: Double, goal: Double): Float {
+        if (goal <= 0.0) return 0f
+        return (total / goal).toFloat()
+    }
+
+    private fun macroGoal(dailyKcal: Int, percent: Int, kcalPerGram: Int): Double {
+        if (dailyKcal <= 0 || percent <= 0 || kcalPerGram <= 0) return 0.0
+        return dailyKcal * (percent / 100.0) / kcalPerGram
+    }
+
+    val dailyProteinGoal: Double get() = macroGoal(dailyGoal, macroPercents.protein, 4)
+    val dailyFatGoal: Double get() = macroGoal(dailyGoal, macroPercents.fat, 9)
+    val dailyCarbGoal: Double get() = macroGoal(dailyGoal, macroPercents.carbs, 4)
+
+    val totalProteinGoal: Double get() = dailyProteinGoal * periodDayCount
+    val totalFatGoal: Double get() = dailyFatGoal * periodDayCount
+    val totalCarbGoal: Double get() = dailyCarbGoal * periodDayCount
+
+    val proteinProgress: Float get() = macroProgress(proteinTotal, totalProteinGoal)
+    val fatProgress: Float get() = macroProgress(fatTotal, totalFatGoal)
+    val carbProgress: Float get() = macroProgress(carbsTotal, totalCarbGoal)
 }
 
 class SummaryViewModel(private val prefs: PrefsGateway) : ViewModel() {
@@ -136,6 +160,11 @@ class SummaryViewModel(private val prefs: PrefsGateway) : ViewModel() {
                     if (kcal > 0) {
                         _st.value = _st.value.copy(dailyGoal = kcal)
                     }
+                }
+            }
+            launch {
+                prefs.macroPercentsFlow.collect { macros ->
+                    _st.value = _st.value.copy(macroPercents = macros)
                 }
             }
         }

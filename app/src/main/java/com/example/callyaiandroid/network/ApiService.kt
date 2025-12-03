@@ -7,6 +7,7 @@ import retrofit2.http.Query
 import retrofit2.http.Header
 import com.example.callyaiandroid.network.dto.FoodSearchRes
 import okhttp3.MultipartBody
+import com.example.callyaiandroid.data.MacroPercents
 
 interface ApiService {
     @POST("auth/register")
@@ -20,6 +21,14 @@ interface ApiService {
     @PUT("auth/me")
     suspend fun updateMe(@Header("Authorization") bearer: String, @Body body: UpdateProfileReq): UserMe
 
+    @GET("macros")
+    suspend fun getMacroPercents(@Header("Authorization") bearer: String): MacroPercents
+
+    @POST("macros")
+    suspend fun saveMacroPercents(
+        @Header("Authorization") bearer: String,
+        @Body body: MacroPercents
+    ): MacroPercents
     @POST("auth/calories/plan")
     suspend fun calculateDailyCalories(
         @Header("Authorization") auth: String,

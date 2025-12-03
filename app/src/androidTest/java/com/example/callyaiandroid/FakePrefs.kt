@@ -1,5 +1,6 @@
 package com.example.callyaiandroid
 
+import com.example.callyaiandroid.data.MacroPercents
 import com.example.callyaiandroid.data.PrefsGateway
 import com.example.callyaiandroid.network.dto.UserMe
 import kotlinx.coroutines.flow.Flow
@@ -11,6 +12,7 @@ class FakePrefs : PrefsGateway {
     private val kcalState = MutableStateFlow(2000)
     private val profileState = MutableStateFlow<UserMe?>(null)
     private val summaryState = MutableStateFlow<String?>(null)
+    private val macroState = MutableStateFlow(MacroPercents())
 
     var savedToken: String? = null
         private set
@@ -20,6 +22,7 @@ class FakePrefs : PrefsGateway {
         private set
     var setThemeCalls: MutableList<String> = mutableListOf()
     var dailyKcalSaves: MutableList<Int> = mutableListOf()
+    var macroSaves: MutableList<MacroPercents> = mutableListOf()
 
     override val tokenFlow: Flow<String?> = tokenState
 
@@ -67,5 +70,17 @@ class FakePrefs : PrefsGateway {
 
     fun emitDailyKcal(value: Int) {
         kcalState.value = value
+    }
+
+    override val macroPercentsFlow: Flow<MacroPercents> = macroState
+
+    override suspend fun setMacroPercents(protein: Int, fat: Int, carbs: Int) {
+        val macroPercents = MacroPercents(protein, fat, carbs)
+        macroState.value = macroPercents
+        macroSaves.add(macroPercents)
+    }
+
+    fun emitMacroPercents(value: MacroPercents) {
+        macroState.value = value
     }
 }

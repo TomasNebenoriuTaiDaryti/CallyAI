@@ -188,6 +188,7 @@ fun SummaryScreen(
                     },
                     style = MaterialTheme.typography.bodyMedium
                 )
+
                 LinearProgressIndicator(
                     progress = { st.caloriesProgress.coerceIn(0f, 1f) },
                     modifier = Modifier.fillMaxWidth()
@@ -203,6 +204,32 @@ fun SummaryScreen(
                     Text(
                         text = "Liko ${st.caloriesRemaining} kcal",
                         style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    MacroProgress(
+                        label = "Baltymai",
+                        total = st.proteinTotal,
+                        goal = st.totalProteinGoal,
+                        dailyGoal = st.dailyProteinGoal,
+                        periodDayCount = st.periodDayCount,
+                        progress = st.proteinProgress
+                    )
+                    MacroProgress(
+                        label = "Riebalai",
+                        total = st.fatTotal,
+                        goal = st.totalFatGoal,
+                        dailyGoal = st.dailyFatGoal,
+                        periodDayCount = st.periodDayCount,
+                        progress = st.fatProgress
+                    )
+                    MacroProgress(
+                        label = "Angliavandeniai",
+                        total = st.carbsTotal,
+                        goal = st.totalCarbGoal,
+                        dailyGoal = st.dailyCarbGoal,
+                        periodDayCount = st.periodDayCount,
+                        progress = st.carbProgress
                     )
                 }
             }
@@ -431,6 +458,33 @@ fun SummaryScreen(
         SummaryAnalysisDialog(
             groups = st.groups,
             onDismiss = { showAnalysis = false }
+        )
+    }
+}
+
+@Composable
+private fun MacroProgress(
+    label: String,
+    total: Double,
+    goal: Double,
+    dailyGoal: Double,
+    periodDayCount: Int,
+    progress: Float
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        val goalText = if (periodDayCount > 1) {
+            "${total.formatAsGrams()} / ${goal.formatAsGrams()} g (${dailyGoal.formatAsGrams()} g/d.)"
+        } else {
+            "${total.formatAsGrams()} / ${goal.formatAsGrams()} g"
+        }
+        Text(
+            "$label: $goalText",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        LinearProgressIndicator(
+            progress = { progress.coerceIn(0f, 1f) },
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }

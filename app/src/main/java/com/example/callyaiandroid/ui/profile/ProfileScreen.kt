@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.callyaiandroid.data.MacroPercents
 import com.example.callyaiandroid.data.Prefs
 import com.example.callyaiandroid.notifications.CalorieNotificationScheduler
 import kotlinx.coroutines.launch
@@ -36,6 +37,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.rememberUpdatedState
+import kotlin.math.roundToInt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -123,6 +125,11 @@ fun ProfileScreen(
     var activityLevel by remember(user) { mutableStateOf("none") }
     var weightInput by remember(user) { mutableStateOf("") }
     var heightInput by remember(user) { mutableStateOf("") }
+    val macroPercents by prefs.macroPercentsFlow.collectAsState(initial = MacroPercents())
+    var proteinPercent by remember(macroPercents) { mutableStateOf(macroPercents.protein.toString()) }
+    var fatPercent by remember(macroPercents) { mutableStateOf(macroPercents.fat.toString()) }
+    var carbPercent by remember(macroPercents) { mutableStateOf(macroPercents.carbs.toString()) }
+    val macroSaving = st.macroSaving
 
     LaunchedEffect(st.message) {
         st.message?.let { showSnack(it) }
@@ -137,6 +144,19 @@ fun ProfileScreen(
     val scrollState = rememberScrollState()
     val notificationOn = notificationsEnabled && hasNotificationPermission
     val frequencyOptions = listOf(1, 3, 6, 12, 24)
+
+    fun calculateMacroGrams(calories: Int, percent: Int, kcalPerGram: Int): Int {
+        return ((calories * (percent / 100f)) / kcalPerGram).roundToInt()
+    }
+
+    val dailyCaloriesInt = kcal.toIntOrNull()
+    val proteinValue = proteinPercent.toIntOrNull()
+    val fatValue = fatPercent.toIntOrNull()
+    val carbValue = carbPercent.toIntOrNull()
+
+    val proteinGrams = dailyCaloriesInt?.let { calories -> proteinValue?.let { calculateMacroGrams(calories, it, 4) } }
+    val fatGrams = dailyCaloriesInt?.let { calories -> fatValue?.let { calculateMacroGrams(calories, it, 9) } }
+    val carbGrams = dailyCaloriesInt?.let { calories -> carbValue?.let { calculateMacroGrams(calories, it, 4) } }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(scrollState).padding(horizontal = 16.dp, vertical = 8.dp).navigationBarsPadding().imePadding(),
@@ -285,6 +305,133 @@ fun ProfileScreen(
                         )
                     }
                 )
+            }
+        }
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            )
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Makro elementų paskirstymas",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "Standartinės rekomendacijos (baltymai 20%, riebalai 30%, angliavandeniai 50%). Galite koreguoti proporcijas pagal savo poreikius.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    "1 g baltymų/angliavandenių = 4 kcal, 1 g riebalų = 9 kcal",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                OutlinedTextField(
+                    value = proteinPercent,
+                    onValueChange = { proteinPercent = it.filter(Char::isDigit) },
+                    label = { Text("Baltymai (%)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    trailingIcon = { Text("%") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = fatPercent,
+                    onValueChange = { fatPercent = it.filter(Char::isDigit) },
+                    label = { Text("Riebalai (%)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    trailingIcon = { Text("%") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = carbPercent,
+                    onValueChange = { carbPercent = it.filter(Char::isDigit) },
+                    label = { Text("Angliavandeniai (%)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    trailingIcon = { Text("%") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                val macroSum = listOfNotNull(proteinValue, fatValue, carbValue).takeIf { it.size == 3 }?.sum()
+                val sumColor = if (macroSum == null || macroSum == 100) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error
+                val caloriesMissing = dailyCaloriesInt == null
+
+                Text(
+                    text = "Procentų suma: ${macroSum ?: "—"}%",
+                    color = sumColor,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = when {
+                            proteinValue == null -> "Baltymai: įveskite procentą"
+                            caloriesMissing -> "Baltymai: ${proteinValue}% (įveskite kalorijų tikslą)"
+                            else -> "Baltymai: ${proteinValue}% (~${proteinGrams ?: 0} g)"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = when {
+                            fatValue == null -> "Riebalai: įveskite procentą"
+                            caloriesMissing -> "Riebalai: ${fatValue}% (įveskite kalorijų tikslą)"
+                            else -> "Riebalai: ${fatValue}% (~${fatGrams ?: 0} g)"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = when {
+                            carbValue == null -> "Angliavandeniai: įveskite procentą"
+                            caloriesMissing -> "Angliavandeniai: ${carbValue}% (įveskite kalorijų tikslą)"
+                            else -> "Angliavandeniai: ${carbValue}% (~${carbGrams ?: 0} g)"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        val protein = proteinPercent.toIntOrNull()
+                        val fat = fatPercent.toIntOrNull()
+                        val carbs = carbPercent.toIntOrNull()
+
+                        if (protein == null || fat == null || carbs == null) {
+                            showSnack("Įveskite galiojančius procentus")
+                            return@Button
+                        }
+                        if (protein < 0 || fat < 0 || carbs < 0) {
+                            showSnack("Procentai negali būti neigiami")
+                            return@Button
+                        }
+                        if (protein + fat + carbs != 100) {
+                            showSnack("Procentų suma turi sudaryti 100%")
+                            return@Button
+                        }
+
+                        vm.saveMacroPercents(token, MacroPercents(protein, fat, carbs)) { success, message ->
+                            scope.launch { showSnack(message ?: if (success) "Išsaugota" else "Nepavyko išsaugoti") }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !macroSaving
+                ) {
+                    if (macroSaving) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Spacer(Modifier.width(12.dp))
+                    }
+                    Text("Išsaugoti makro paskirstymą")
+                }
             }
         }
         Card(

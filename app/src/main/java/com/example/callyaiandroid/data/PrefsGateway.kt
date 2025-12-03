@@ -3,6 +3,11 @@ package com.example.callyaiandroid.data
 import com.example.callyaiandroid.network.dto.UserMe
 import kotlinx.coroutines.flow.Flow
 
+data class MacroPercents(
+    val protein: Int = 20,
+    val fat: Int = 30,
+    val carbs: Int = 50,
+)
 interface PrefsGateway {
     val tokenFlow: Flow<String?>
     suspend fun saveToken(t: String?)
@@ -24,4 +29,6 @@ interface PrefsGateway {
 
     val notificationIntervalHoursFlow: Flow<Int>
     suspend fun setNotificationIntervalHours(hours: Int)
+    val macroPercentsFlow: Flow<MacroPercents>
+    suspend fun setMacroPercents(protein: Int, fat: Int, carbs: Int)
 }

@@ -2,6 +2,7 @@ package com.example.callyaiandroid.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.callyaiandroid.data.MacroPercents
 import com.example.callyaiandroid.data.PrefsGateway
 import com.example.callyaiandroid.network.RetrofitClient
 import com.example.callyaiandroid.network.dto.CaloriePlanReq
@@ -19,6 +20,7 @@ data class ProfileState(
     val message: String? = null,
     val calcLoading: Boolean = false,
     val calcCalories: Int? = null,
+    val macroSaving: Boolean = false,
 )
 
 class ProfileViewModel(private val prefs: PrefsGateway) : ViewModel() {
@@ -42,6 +44,7 @@ class ProfileViewModel(private val prefs: PrefsGateway) : ViewModel() {
                 val resolved = me.copy(dailyCalories = me.dailyCalories ?: 2000)
                 prefs.saveProfileCache(resolved)
                 prefs.setDailyKcal(resolved.dailyCalories ?: 2000)
+                refreshMacroPercents(token)
                 _st.value = ProfileState(user = resolved)
             } catch (e: Exception) {
                 _st.value = ProfileState(message = "Nepavyko įkelti profilio")
@@ -68,6 +71,37 @@ class ProfileViewModel(private val prefs: PrefsGateway) : ViewModel() {
                 _st.value = _st.value.copy(loading = false, message = msg)
             } catch (e: Exception) {
                 _st.value = _st.value.copy(loading = false, message = "Nepavyko atnaujinti")
+            }
+        }
+    }
+
+    fun refreshMacroPercents(token: String) {
+        viewModelScope.launch {
+            try {
+                val macros = RetrofitClient.api.getMacroPercents("Bearer $token")
+                prefs.setMacroPercents(macros.protein, macros.fat, macros.carbs)
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    fun saveMacroPercents(token: String, percents: MacroPercents, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                _st.value = _st.value.copy(macroSaving = true, message = null)
+                val saved = RetrofitClient.api.saveMacroPercents("Bearer $token", percents)
+                prefs.setMacroPercents(saved.protein, saved.fat, saved.carbs)
+                _st.value = _st.value.copy(macroSaving = false)
+                onResult(true, "Makro paskirstymas išsaugotas")
+            } catch (e: HttpException) {
+                val msg = e.response()?.errorBody()?.string()?.let { json ->
+                    try { JSONObject(json).optString("message") } catch (_: Exception) { null }
+                } ?: "Nepavyko išsaugoti makro"
+                _st.value = _st.value.copy(macroSaving = false)
+                onResult(false, msg)
+            } catch (_: Exception) {
+                _st.value = _st.value.copy(macroSaving = false)
+                onResult(false, "Nepavyko išsaugoti makro")
             }
         }
     }

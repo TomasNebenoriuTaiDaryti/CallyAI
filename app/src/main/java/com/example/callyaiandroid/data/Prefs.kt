@@ -20,6 +20,9 @@ object Keys {
     val summaryCache = stringPreferencesKey("summary_cache")
     val notificationsEnabled = booleanPreferencesKey("notifications_enabled")
     val notificationIntervalHours = intPreferencesKey("notification_interval_hours")
+    val macroProtein = intPreferencesKey("macro_protein")
+    val macroFat = intPreferencesKey("macro_fat")
+    val macroCarbs = intPreferencesKey("macro_carbs")
 }
 class Prefs(private val ctx: Context) : PrefsGateway {
     override val tokenFlow = ctx.dataStore.data.map { prefs ->
@@ -83,5 +86,21 @@ class Prefs(private val ctx: Context) : PrefsGateway {
     override val notificationIntervalHoursFlow = ctx.dataStore.data.map { it[Keys.notificationIntervalHours] ?: 3 }
     override suspend fun setNotificationIntervalHours(hours: Int) {
         ctx.dataStore.edit { it[Keys.notificationIntervalHours] = max(1, hours) }
+    }
+
+    override val macroPercentsFlow = ctx.dataStore.data.map { prefs ->
+        MacroPercents(
+            protein = prefs[Keys.macroProtein] ?: MacroPercents().protein,
+            fat = prefs[Keys.macroFat] ?: MacroPercents().fat,
+            carbs = prefs[Keys.macroCarbs] ?: MacroPercents().carbs,
+        )
+    }
+
+    override suspend fun setMacroPercents(protein: Int, fat: Int, carbs: Int) {
+        ctx.dataStore.edit { prefs ->
+            prefs[Keys.macroProtein] = protein.coerceIn(0, 100)
+            prefs[Keys.macroFat] = fat.coerceIn(0, 100)
+            prefs[Keys.macroCarbs] = carbs.coerceIn(0, 100)
+        }
     }
 }
