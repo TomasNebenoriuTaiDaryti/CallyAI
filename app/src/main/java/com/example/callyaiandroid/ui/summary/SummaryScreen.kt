@@ -1,5 +1,7 @@
 package com.example.callyaiandroid.ui.summary
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -8,6 +10,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -169,68 +173,85 @@ fun SummaryScreen(
             }
         }
         ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            var goalsExpanded by remember(st.periodDayCount, st.periodType) { mutableStateOf(true) }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = if (st.periodDayCount > 1) "Laikotarpio tikslas" else "Dienos tikslas",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = if (st.periodDayCount > 1) {
-                        "${st.caloriesTotal} / ${st.totalGoal} kcal (${st.dailyGoal} kcal/d.)"
-                    } else {
-                        "${st.caloriesTotal} / ${st.totalGoal} kcal"
-                    },
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                LinearProgressIndicator(
-                    progress = { st.caloriesProgress.coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                if (st.caloriesOver > 0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { goalsExpanded = !goalsExpanded },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = "Viršyta ${st.caloriesOver} kcal",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
+                        text = if (st.periodDayCount > 1) "Laikotarpio tikslas" else "Dienos tikslas",
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
-                } else {
-                    Text(
-                        text = "Liko ${st.caloriesRemaining} kcal",
-                        style = MaterialTheme.typography.bodyMedium
+                    Icon(
+                        imageVector = if (goalsExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = if (goalsExpanded) "Suskleisti tikslus" else "Išskleisti tikslus"
                     )
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MacroProgress(
-                        label = "Baltymai",
-                        total = st.proteinTotal,
-                        goal = st.totalProteinGoal,
-                        dailyGoal = st.dailyProteinGoal,
-                        periodDayCount = st.periodDayCount,
-                        progress = st.proteinProgress
-                    )
-                    MacroProgress(
-                        label = "Riebalai",
-                        total = st.fatTotal,
-                        goal = st.totalFatGoal,
-                        dailyGoal = st.dailyFatGoal,
-                        periodDayCount = st.periodDayCount,
-                        progress = st.fatProgress
-                    )
-                    MacroProgress(
-                        label = "Angliavandeniai",
-                        total = st.carbsTotal,
-                        goal = st.totalCarbGoal,
-                        dailyGoal = st.dailyCarbGoal,
-                        periodDayCount = st.periodDayCount,
-                        progress = st.carbProgress
-                    )
+                AnimatedVisibility(goalsExpanded) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = if (st.periodDayCount > 1) {
+                                "${st.caloriesTotal} / ${st.totalGoal} kcal (${st.dailyGoal} kcal/d.)"
+                            } else {
+                                "${st.caloriesTotal} / ${st.totalGoal} kcal"
+                            },
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        LinearProgressIndicator(
+                            progress = { st.caloriesProgress.coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        if (st.caloriesOver > 0) {
+                            Text(
+                                text = "Viršyta ${st.caloriesOver} kcal",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        } else {
+                            Text(
+                                text = "Liko ${st.caloriesRemaining} kcal",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            MacroProgress(
+                                label = "Baltymai",
+                                total = st.proteinTotal,
+                                goal = st.totalProteinGoal,
+                                dailyGoal = st.dailyProteinGoal,
+                                periodDayCount = st.periodDayCount,
+                                progress = st.proteinProgress
+                            )
+                            MacroProgress(
+                                label = "Riebalai",
+                                total = st.fatTotal,
+                                goal = st.totalFatGoal,
+                                dailyGoal = st.dailyFatGoal,
+                                periodDayCount = st.periodDayCount,
+                                progress = st.fatProgress
+                            )
+                            MacroProgress(
+                                label = "Angliavandeniai",
+                                total = st.carbsTotal,
+                                goal = st.totalCarbGoal,
+                                dailyGoal = st.dailyCarbGoal,
+                                periodDayCount = st.periodDayCount,
+                                progress = st.carbProgress
+                            )
+                        }
+                    }
                 }
             }
         }
