@@ -204,6 +204,33 @@ class AddFoodViewModel : ViewModel() {
         )
     }
 
+    fun savePhotoDraft(token: String) {
+        val draftItems = _st.value.photoDraft
+        if (draftItems.isEmpty()) return
+
+        viewModelScope.launch {
+            try {
+                _st.value = _st.value.copy(loading = true, message = null)
+
+                val req = createFoodLogRequest(draftItems)
+
+                RetrofitClient.api.createFoodLog("Bearer $token", req)
+                _st.value = _st.value.copy(
+                    loading = false,
+                    photoDraft = emptyList(),
+                    message = "Įrašas išsaugotas"
+                )
+            } catch (e: HttpException) {
+                val msg = e.response()?.errorBody()?.string()?.let { json ->
+                    try { JSONObject(json).optString("message") } catch (_: Exception) { null }
+                } ?: "Nepavyko išsaugoti"
+                _st.value = _st.value.copy(loading = false, message = msg)
+            } catch (_: Exception) {
+                _st.value = _st.value.copy(loading = false, message = "Nepavyko išsaugoti")
+            }
+        }
+    }
+
     fun setPhotoDraftGrams(index: Int, gramsText: String) {
         val g = gramsText.filter { it.isDigit() }.toIntOrNull() ?: 0
         val list = _st.value.photoDraft.toMutableList()
@@ -256,6 +283,24 @@ class AddFoodViewModel : ViewModel() {
         val d = _st.value.consumedAt.toLocalDate()
         _st.value = _st.value.copy(consumedAt = LocalDateTime.of(d, time))
     }
+
+    private fun createFoodLogRequest(items: List<CartItem>): FoodLogCreateReq {
+        return FoodLogCreateReq(
+            consumedAt = _st.value.consumedAt.format(dtFmt),
+            items = items.map {
+                FoodLogItemReq(
+                    name = it.name,
+                    caloriesPer100g = it.caloriesPer100g,
+                    grams = it.grams,
+                    quantity = it.qty,
+                    proteinPer100g = it.proteinPer100g,
+                    fatPer100g = it.fatPer100g,
+                    carbsPer100g = it.carbsPer100g
+                )
+            }
+        )
+    }
+
     fun save(token: String) {
         val items = _st.value.cart
         if (items.isEmpty()) return
@@ -264,20 +309,7 @@ class AddFoodViewModel : ViewModel() {
             try {
                 _st.value = _st.value.copy(loading = true, message = null)
 
-                val req = FoodLogCreateReq(
-                    consumedAt = _st.value.consumedAt.format(dtFmt),
-                    items = items.map {
-                        FoodLogItemReq(
-                            name = it.name,
-                            caloriesPer100g = it.caloriesPer100g,
-                            grams = it.grams,
-                            quantity = it.qty,
-                            proteinPer100g = it.proteinPer100g,
-                            fatPer100g = it.fatPer100g,
-                            carbsPer100g = it.carbsPer100g
-                        )
-                    }
-                )
+                val req = createFoodLogRequest(items)
 
                 RetrofitClient.api.createFoodLog("Bearer $token", req)
                 _st.value = _st.value.copy(

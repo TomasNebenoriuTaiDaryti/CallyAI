@@ -93,7 +93,25 @@ fun ProfileScreen(
         return
     }
     val user = st.user ?: run {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Nepavyko įkelti profilio") }
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Nepavyko įkelti profilio")
+                Button(
+                    onClick = { vm.logout(token) { onLoggedOut() } },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Icon(Icons.Outlined.Logout, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Atsijungti")
+                }
+            }
+        }
         return
     }
 

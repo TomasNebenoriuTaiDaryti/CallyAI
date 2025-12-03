@@ -121,7 +121,9 @@ fun AddFoodScreen(
                 onIncQty = vm::incPhotoDraftQty,
                 onDecQty = vm::decPhotoDraftQty,
                 onDiscard = vm::clearPhotoDraft,
-                onImport = vm::importPhotoDraftToCart
+                onSave = { vm.savePhotoDraft(token) },
+                openDatePicker = { showDate = true },
+                openTimePicker = { showTime = true }
             )
         }
         Spacer(Modifier.height(40.dp))
@@ -281,7 +283,9 @@ private fun CameraEntrySection(
     onIncQty: (Int) -> Unit,
     onDecQty: (Int) -> Unit,
     onDiscard: () -> Unit,
-    onImport: () -> Unit,
+    onSave: () -> Unit,
+    openDatePicker: () -> Unit,
+    openTimePicker: () -> Unit,
 ) {
 
     val context = LocalContext.current
@@ -373,7 +377,7 @@ private fun CameraEntrySection(
                 style = MaterialTheme.typography.bodyMedium
             )
         } else {
-            Text("Atpažinti produktai", style = MaterialTheme.typography.titleMedium)
+            Text("Atpažintas produktas", style = MaterialTheme.typography.titleMedium)
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -390,9 +394,38 @@ private fun CameraEntrySection(
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onDiscard) { Text("Išvalyti") }
-                Button(onClick = onImport) { Text("Pridėti į krepšelį") }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = openDatePicker) {
+                        val d = state.consumedAt.toLocalDate()
+                        Text("Data: ${d.year}-${"%02d".format(d.monthValue)}-${"%02d".format(d.dayOfMonth)}")
+                    }
+                    Button(onClick = openTimePicker) {
+                        val t = state.consumedAt.toLocalTime()
+                        Text("Laikas: ${"%02d".format(t.hour)}:${"%02d".format(t.minute)}")
+                    }
+                }
+                
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    val totalKcal = state.photoDraft.sumOf { it.totalKcal }
+                    Text(
+                        "Iš viso: $totalKcal kcal",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    val totalProtein = state.photoDraft.sumOf { it.totalProtein }
+                    val totalFat = state.photoDraft.sumOf { it.totalFat }
+                    val totalCarbs = state.photoDraft.sumOf { it.totalCarbs }
+                    Text(
+                        "Baltymai: ${totalProtein.formatAsGrams()} g  Riebalai: ${totalFat.formatAsGrams()} g  Angliavandeniai: ${totalCarbs.formatAsGrams()} g",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onDiscard) { Text("Išvalyti") }
+                    Button(onClick = onSave) { Text("Išsaugoti") }
+                }
             }
         }
     }
