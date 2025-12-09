@@ -19,6 +19,8 @@ import retrofit2.HttpException
 import retrofit2.Response
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import com.example.callyaiandroid.data.MacroPercents
+import okhttp3.MultipartBody
 
 class AddFoodViewModelTest {
 
@@ -217,6 +219,11 @@ class AddFoodViewModelTest {
         override suspend fun diaryAll(auth: String): List<FoodLogDtos> = throw UnsupportedOperationException()
         override suspend fun forgotPassword(body: ForgotPasswordReq): Map<String, String> = throw UnsupportedOperationException()
         override suspend fun deleteFoodLog(auth: String, id: Long) {
+            throw UnsupportedOperationException()
+        }
+        override suspend fun getMacroPercents(bearer: String): MacroPercents = MacroPercents()
+        override suspend fun saveMacroPercents(bearer: String, body: MacroPercents): MacroPercents = body
+        override suspend fun analyzeFoodPhoto(auth: String, image: MultipartBody.Part): PhotoRecognitionRes {
             throw UnsupportedOperationException()
         }
     }

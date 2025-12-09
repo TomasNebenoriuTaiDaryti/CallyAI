@@ -13,7 +13,8 @@ class FakePrefs : PrefsGateway {
     private val profileState = MutableStateFlow<UserMe?>(null)
     private val summaryState = MutableStateFlow<String?>(null)
     private val macroState = MutableStateFlow(MacroPercents())
-
+    private val notificationsEnabledState = MutableStateFlow(false)
+    private val notificationIntervalState = MutableStateFlow(4)
     var savedToken: String? = null
         private set
     var savedSummaryCache: String? = null
@@ -82,5 +83,17 @@ class FakePrefs : PrefsGateway {
 
     fun emitMacroPercents(value: MacroPercents) {
         macroState.value = value
+    }
+
+    override val notificationsEnabledFlow: Flow<Boolean> = notificationsEnabledState
+
+    override suspend fun setNotificationsEnabled(enabled: Boolean) {
+        notificationsEnabledState.value = enabled
+    }
+
+    override val notificationIntervalHoursFlow: Flow<Int> = notificationIntervalState
+
+    override suspend fun setNotificationIntervalHours(hours: Int) {
+        notificationIntervalState.value = hours
     }
 }

@@ -20,6 +20,9 @@ import org.junit.Before
 import org.junit.Test
 import retrofit2.HttpException
 import retrofit2.Response
+import com.example.callyaiandroid.data.MacroPercents
+import com.example.callyaiandroid.network.dto.PhotoRecognitionRes
+import okhttp3.MultipartBody
 
 class AuthViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
@@ -186,5 +189,13 @@ class AuthViewModelTest {
             throw UnsupportedOperationException()
 
         override suspend fun deleteFoodLog(auth: String, id: Long) = throw UnsupportedOperationException()
+
+        override suspend fun getMacroPercents(bearer: String): MacroPercents = MacroPercents()
+
+        override suspend fun saveMacroPercents(bearer: String, body: MacroPercents): MacroPercents = body
+
+        override suspend fun analyzeFoodPhoto(auth: String, image: MultipartBody.Part): PhotoRecognitionRes {
+            throw UnsupportedOperationException()
+        }
     }
 }

@@ -19,6 +19,8 @@ import org.junit.Test
 import retrofit2.HttpException
 import retrofit2.Response
 import java.time.LocalDate
+import com.example.callyaiandroid.data.MacroPercents
+import okhttp3.MultipartBody
 
 class SummaryViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
@@ -269,5 +271,10 @@ class SummaryViewModelTest {
             throw UnsupportedOperationException()
         }
         override suspend fun getDayEntries(auth: String, date: String): List<FoodLogEntryRes> = throw UnsupportedOperationException()
+        override suspend fun getMacroPercents(bearer: String): MacroPercents = MacroPercents()
+        override suspend fun saveMacroPercents(bearer: String, body: MacroPercents): MacroPercents = body
+        override suspend fun analyzeFoodPhoto(auth: String, image: MultipartBody.Part): PhotoRecognitionRes {
+            throw UnsupportedOperationException()
+        }
     }
 }

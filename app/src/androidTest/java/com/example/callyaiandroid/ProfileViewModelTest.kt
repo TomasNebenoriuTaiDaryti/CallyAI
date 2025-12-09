@@ -18,6 +18,8 @@ import org.junit.Before
 import org.junit.Test
 import retrofit2.HttpException
 import retrofit2.Response
+import com.example.callyaiandroid.data.MacroPercents
+import okhttp3.MultipartBody
 
 class ProfileViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
@@ -88,7 +90,7 @@ class ProfileViewModelTest {
     fun calculateCaloriesSuccessUpdatesState() = runTest {
         api.caloriePlanResp = CaloriePlanResp(dailyCalories = 2100, advice = "Valgykite subalansuotai")
 
-        vm.calculateDailyCalories("token", goal = "maintain", weight = 70.0, height = 175.0)
+        vm.calculateDailyCalories("token", goal = "maintain", weight = 70.0, height = 175.0, gender = "male", activityLevel = "low")
         advanceUntilIdle()
 
         val state = vm.st.value
@@ -180,5 +182,10 @@ class ProfileViewModelTest {
         override suspend fun getDayEntries(auth: String, date: String): List<FoodLogEntryRes> = throw UnsupportedOperationException()
         override suspend fun deleteFoodLog(auth: String, id: Long) = throw UnsupportedOperationException()
         override suspend fun searchFood(auth: String, query: String): FoodSearchRes = throw UnsupportedOperationException()
+        override suspend fun getMacroPercents(bearer: String): MacroPercents = MacroPercents()
+        override suspend fun saveMacroPercents(bearer: String, body: MacroPercents): MacroPercents = body
+        override suspend fun analyzeFoodPhoto(auth: String, image: MultipartBody.Part): PhotoRecognitionRes {
+            throw UnsupportedOperationException()
+        }
     }
 }

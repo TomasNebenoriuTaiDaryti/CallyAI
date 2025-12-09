@@ -50,11 +50,11 @@ public class CaloriePlanService {
             ObjectNode user = M.createObjectNode();
             user.put("role", "user");
             user.put("content",
-                    "Goal: " + req.getGoal().toLowerCase() + ". " +
+                    "Goal: " + safeLower(req.getGoal(), "maintain") + ". " +
                             "Weight: " + req.getWeightKg() + " kg. " +
                             "Height: " + req.getHeightCm() + " cm. " +
-                            "Gender: " + req.getGender().toLowerCase() + ". " +
-                            "Activity level: " + req.getActivityLevel().toLowerCase() + ". " +
+                            "Gender: " + safeLower(req.getGender(), "female") + ". " +
+                            "Activity level: " + safeLower(req.getActivityLevel(), "none") + ". " +
                             "Suggest recommended daily calories for an adult with the given goal.");
             msgs.add(user);
 
@@ -93,13 +93,16 @@ public class CaloriePlanService {
     private CaloriePlanResponse fallback(CaloriePlanRequest req) {
         final double assumedAge = 30.0; // approximate age when not provided by the client
         double bmr = 10.0 * req.getWeightKg() + 6.25 * req.getHeightCm() - 5.0 * assumedAge;
-        if ("male".equalsIgnoreCase(req.getGender())) {
+        String gender = safeLower(req.getGender(), "female");
+        if ("male".equalsIgnoreCase(gender)) {
             bmr += 5.0;
         } else {
             bmr -= 161.0;
         }
 
-        double multiplier = switch (req.getActivityLevel().toLowerCase()) {
+
+        String activity = safeLower(req.getActivityLevel(), "none");
+        double multiplier = switch (activity) {
             case "moderate" -> 1.375;
             case "active" -> 1.55;
             case "very_active" -> 1.725;
@@ -107,7 +110,7 @@ public class CaloriePlanService {
         };
 
         double maintenance = bmr * multiplier;
-        String goal = req.getGoal().toLowerCase();
+        String goal = safeLower(req.getGoal(), "maintain");
         double adjustment = 0.0;
         if (goal.contains("lose")) {
             adjustment = -400.0;
@@ -118,5 +121,8 @@ public class CaloriePlanService {
         double estimated = maintenance + adjustment;
         int calories = (int) Math.max(1200, Math.min(4500, Math.round(estimated)));
         return new CaloriePlanResponse(calories);
+    }
+    private String safeLower(String value, String fallback) {
+        return value == null ? fallback : value.toLowerCase();
     }
 }

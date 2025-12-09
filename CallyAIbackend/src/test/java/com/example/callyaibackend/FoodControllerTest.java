@@ -2,6 +2,8 @@ package com.example.callyaibackend;
 
 import com.example.callyaibackend.controller.FoodController;
 import com.example.callyaibackend.model.FoodResponse;
+import com.example.callyaibackend.model.User;
+import com.example.callyaibackend.service.AuthService;
 import com.example.callyaibackend.service.FoodApiService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,14 +27,30 @@ class FoodControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
+    private AuthService authService;
+
+    @MockBean
     private FoodApiService foodApiService;
 
     @Test
     void searchReturnsFoodResponse() throws Exception {
-        FoodResponse response = new FoodResponse("Apple", 52, "per 100 g", "fallback",0.3,0.2,13.8);
+        FoodResponse response = new FoodResponse(
+                "Apple",
+                52,
+                "per 100 g",
+                "fallback",
+                0.3,
+                0.2,
+                13.8
+        );
+
+        User mockUser = new User();
+
+        when(authService.requireUser("Bearer test-token")).thenReturn(mockUser);
         when(foodApiService.search(eq("apple"))).thenReturn(response);
 
         mockMvc.perform(get("/api/food/search")
+                        .header("Authorization", "Bearer test-token")
                         .param("q", "apple")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -44,6 +62,7 @@ class FoodControllerTest {
                 .andExpect(jsonPath("$.fat").value(0.2))
                 .andExpect(jsonPath("$.carbs").value(13.8));
 
+        verify(authService).requireUser("Bearer test-token");
         verify(foodApiService).search("apple");
     }
 }

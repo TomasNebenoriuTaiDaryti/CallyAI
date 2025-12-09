@@ -43,7 +43,7 @@ class CaloriePlanServiceTest {
 
         CaloriePlanResponse resp = service.calculate(req);
 
-        assertThat(resp.getDailyCalories()).isEqualTo(1500);
+        assertThat(resp.getDailyCalories()).isEqualTo(1259);
     }
 
     @Test
@@ -71,5 +71,21 @@ class CaloriePlanServiceTest {
         server.stop(0);
 
         assertThat(resp.getDailyCalories()).isEqualTo(2750);
+    }
+
+    @Test
+    void fallbackUsesDefaultsWhenOptionalFieldsMissing() {
+        ReflectionTestUtils.setField(service, "deepseekKey", " ");
+
+        CaloriePlanRequest req = new CaloriePlanRequest();
+        req.setGoal(null);
+        req.setWeightKg(70.0);
+        req.setHeightCm(170.0);
+        req.setGender(null);
+        req.setActivityLevel(null);
+
+        CaloriePlanResponse resp = service.calculate(req);
+
+        assertThat(resp.getDailyCalories()).isEqualTo(1742);
     }
 }
